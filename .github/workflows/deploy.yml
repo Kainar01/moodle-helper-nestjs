@@ -9,17 +9,17 @@ on:
       - master
 jobs:
   #First we will see the application build or not , then we will deploy in EC2
-  Build:
-    runs-on: ubuntu-latest
+  # Build:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v2
-      
-      - name: Build the docker_compose
-        run: docker-compose up -d --build
+  #   steps:
+  #     - uses: actions/checkout@v2
+
+  #     - name: Build the docker_compose
+  #       run: docker-compose up -d --build
 
   Deploy:
-    needs: build
+    # needs: build
     runs-on: ubuntu-latest
     environment: production
 

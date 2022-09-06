@@ -1,0 +1,24 @@
+{
+  "username": "Да",
+  "set-up-password": {
+    "change-existing": "Ваш пароль: *{password}*\n\nИзменить пароль?",
+    "enter-new-password": "Введите новый пароль",
+    "invalid-password": "Пароль не может быть пустым"
+  },
+  "set-up-username": {
+    "change-existing": "Ваш логин: *{username}*\n\nИзменить логин?",
+    "enter-new-login": "Введите новый логин",
+    "invalid-login": "Логин может только соддержать буквы и цифры"
+  },
+  "save-credentials": {
+    "credentials": "Логин: *{username}*\nПароль: *{password}*",
+    "save-new-credentials": "Логин: *{username}*\nПароль: *{password}*\n\nСохранить новые данные?",
+    "saved-credentials": "Данные обновились успешно!\n\nВы будете получать уведомления каждый день в *{schedules}*\n\n/schedule - Кастомизировать время уведомлении",
+    "wrong-credentials": "Данные которые вы ввели не правильны или неполадки на сервере\n\nОшибка: {error}",
+    "save-in-progress": "Мы проверяем валидность данных, подождите пожалуйста"
+  },
+  "no": "Нет",
+  "edit": "Изменить",
+  "confirm": "Принять",
+  "cancel": "Отменить"
+}

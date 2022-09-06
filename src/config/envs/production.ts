@@ -22,7 +22,4 @@ export const config: AppEnvConfig = {
     },
     autoLoadEntities: true,
   },
-  auth: {
-    cookieSecure: true,
-  },
 };

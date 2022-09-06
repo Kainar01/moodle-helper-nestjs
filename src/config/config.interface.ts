@@ -16,13 +16,6 @@ export type AppConfig = {
     port: number;
     cors: boolean;
   };
-  auth: {
-    jwtSecret: string;
-    jwtRefreshSecret: string;
-    jwtExpiration: number | string;
-    jwtRefreshExpiration: number | string;
-    cookieSecure: boolean;
-  };
   bot: {
     moodle: {
       url: string;
@@ -36,7 +29,7 @@ export type AppConfig = {
     url: string;
   };
   mongodb: {
-    url: string;
+    url?: string;
   };
 };
 
@@ -54,10 +47,8 @@ export type AppEnvVars = {
   DB_USER: string;
   DB_PASSWORD: string;
   DB_NAME: string;
-  MONGO_DB_URL: string;
+  MONGO_DB_URL?: string;
   REDIS_URL: string;
-  JWT_SECRET: string;
-  JWT_REFRESH_SECRET: string;
   BOT_MOODLE_URL: string;
   MOODLE_BOT_TOKEN: string;
   APP_TIMEZONE: string;

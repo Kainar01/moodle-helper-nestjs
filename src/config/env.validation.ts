@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { plainToInstance } from 'class-transformer';
-import { IsBooleanString,IsEnum, IsNotEmpty, IsNumberString, IsString, IsUrl, validateSync } from 'class-validator';
+import { IsBooleanString,IsEnum, IsNotEmpty, IsNumberString, IsOptional, IsString, IsUrl, validateSync } from 'class-validator';
 import { AppEnv, AppEnvVars } from './config.interface';
 
 class EnvironmentVariables implements AppEnvVars {
@@ -30,20 +30,12 @@ class EnvironmentVariables implements AppEnvVars {
   DB_NAME!: string;
 
   @IsString()
-  @IsNotEmpty()
-  MONGO_DB_URL!: string;
+  @IsOptional()
+  MONGO_DB_URL?: string;
 
   @IsString()
   @IsNotEmpty()
   REDIS_URL!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  JWT_SECRET!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  JWT_REFRESH_SECRET!: string;
 
   @IsString()
   @IsNotEmpty()

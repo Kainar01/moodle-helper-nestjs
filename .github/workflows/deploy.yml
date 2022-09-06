@@ -10,9 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-
       - name: Build the docker_compose
+        uses: actions/checkout@v2
         run: docker-compose up -d --build
 
   Deploy:
@@ -20,7 +19,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - env:
+      - name: Deploy in EC2
+        env:
           DB_TYPE: ${{ secrets.DB_TYPE }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
@@ -34,12 +34,12 @@ jobs:
           PORT: ${{secrets.PORT}}
           BOT_USER_VERIFICATION_DISABLE: ${{secrets.BOT_USER_VERIFICATION_DISABLE}}
           APP_TIMEZONE: ${{secrets.APP_TIMEZONE}}
-      - uses: actions/checkout@v2
-      - name: Deploy in EC2
-        env:
+          # secrets for ssh
           PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
           HOSTNAME: ${{ secrets.HOSTNAME  }}
           USER_NAME: ${{ secrets.USER_NAME  }}
+
+        uses: actions/checkout@v2
 
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key

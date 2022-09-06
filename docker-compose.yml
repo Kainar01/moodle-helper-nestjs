@@ -1,0 +1,39 @@
+version: "2.3" # optional since v1.27.0
+services:
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+
+  db:
+    image: postgres:13
+    volumes:
+      - db_vol:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=change-in-production
+      - POSTGRES_DB=moodle_bot
+  
+  backend:
+    shm_size: '4gb'
+    command: "yarn start"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      - NODE_ENV=development
+      # - DB_HOST=db
+      # - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+    ports:
+      - 3000:3000
+volumes:
+  db_vol: null
+  redis_data:

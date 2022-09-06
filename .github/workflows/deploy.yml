@@ -1,9 +1,12 @@
 name: CI/CD Moodle Telegram app
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+
   pull_request:
-    branches: [master]
+    branches:
+      - master
 jobs:
   #First we will see the application build or not , then we will deploy in EC2
   Build:
@@ -17,8 +20,12 @@ jobs:
   Deploy:
     needs: build
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
+      - name: Checkout the files
+        uses: actions/checkout@v2
+
       - name: Deploy in EC2
         env:
           DB_TYPE: ${{ secrets.DB_TYPE }}
@@ -38,8 +45,6 @@ jobs:
           PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
           HOSTNAME: ${{ secrets.HOSTNAME  }}
           USER_NAME: ${{ secrets.USER_NAME  }}
-
-        uses: actions/checkout@v2
 
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key

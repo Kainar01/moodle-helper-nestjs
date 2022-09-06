@@ -1,0 +1,55 @@
+name: CI/CD Moodle Telegram app
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+jobs:
+  #First we will see the application build or not , then we will deploy in EC2
+  Build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build the docker_compose
+        run: docker-compose up -d --build
+
+  Deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - env:
+          DB_TYPE: ${{ secrets.DB_TYPE }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          MOODLE_BOT_TOKEN: ${{ secrets.MOODLE_BOT_TOKEN }}
+          BOT_MOODLE_URL: ${{ secrets.BOT_MOODLE_URL }}
+          NODE_ENV: ${{secrets.NODE_ENV}}
+          PORT: ${{secrets.PORT}}
+          BOT_USER_VERIFICATION_DISABLE: ${{secrets.BOT_USER_VERIFICATION_DISABLE}}
+          APP_TIMEZONE: ${{secrets.APP_TIMEZONE}}
+      - uses: actions/checkout@v2
+      - name: Deploy in EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
+          HOSTNAME: ${{ secrets.HOSTNAME  }}
+          USER_NAME: ${{ secrets.USER_NAME  }}
+
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} '
+
+            #Now we have got the access of EC2 and we will start the deploy .
+            cd /home/ubuntu/moodle-helper-nestjs &&
+            git checkout master &&
+            git fetch --all &&
+            git reset --hard origin/master &&
+            git pull origin master &&
+            docker-compose up -d --build
+            docker-compose exec -T backend yarn migration:run

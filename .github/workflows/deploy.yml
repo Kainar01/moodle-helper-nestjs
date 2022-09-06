@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Build the docker_compose
         run: docker-compose up -d --build
 
@@ -42,7 +42,6 @@ jobs:
           PORT: ${{secrets.PORT}}
           BOT_USER_VERIFICATION_DISABLE: ${{secrets.BOT_USER_VERIFICATION_DISABLE}}
           APP_TIMEZONE: ${{secrets.APP_TIMEZONE}}
-          # secrets for ssh
           PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
           HOSTNAME: ${{ secrets.HOSTNAME  }}
           USER_NAME: ${{ secrets.USER_NAME  }}

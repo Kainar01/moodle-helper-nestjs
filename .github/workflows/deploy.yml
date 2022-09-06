@@ -1,9 +1,12 @@
 name: CI/CD Moodle Telegram app
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+
   pull_request:
-    branches: [master]
+    branches:
+      - master
 jobs:
   #First we will see the application build or not , then we will deploy in EC2
   Build:
@@ -11,16 +14,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
+      
       - name: Build the docker_compose
         run: docker-compose up -d --build
 
   Deploy:
     needs: build
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
-      - env:
+      - name: Checkout the files
+        uses: actions/checkout@v2
+
+      - name: Deploy in EC2
+        env:
           DB_TYPE: ${{ secrets.DB_TYPE }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
@@ -34,9 +42,7 @@ jobs:
           PORT: ${{secrets.PORT}}
           BOT_USER_VERIFICATION_DISABLE: ${{secrets.BOT_USER_VERIFICATION_DISABLE}}
           APP_TIMEZONE: ${{secrets.APP_TIMEZONE}}
-      - uses: actions/checkout@v2
-      - name: Deploy in EC2
-        env:
+          # secrets for ssh
           PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
           HOSTNAME: ${{ secrets.HOSTNAME  }}
           USER_NAME: ${{ secrets.USER_NAME  }}

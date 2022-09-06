@@ -38,11 +38,10 @@ jobs:
           REDIS_URL: ${{ secrets.REDIS_URL }}
           MOODLE_BOT_TOKEN: ${{ secrets.MOODLE_BOT_TOKEN }}
           BOT_MOODLE_URL: ${{ secrets.BOT_MOODLE_URL }}
-          NODE_ENV: ${{secrets.NODE_ENV}}
-          PORT: ${{secrets.PORT}}
-          BOT_USER_VERIFICATION_DISABLE: ${{secrets.BOT_USER_VERIFICATION_DISABLE}}
-          APP_TIMEZONE: ${{secrets.APP_TIMEZONE}}
-          # secrets for ssh
+          NODE_ENV: ${{ secrets.NODE_ENV }}
+          PORT: ${{ secrets.PORT }}
+          BOT_USER_VERIFICATION_DISABLE: ${{ secrets.BOT_USER_VERIFICATION_DISABLE }}
+          APP_TIMEZONE: ${{ secrets.APP_TIMEZONE }}
           PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
           HOSTNAME: ${{ secrets.HOSTNAME  }}
           USER_NAME: ${{ secrets.USER_NAME  }}

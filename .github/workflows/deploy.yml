@@ -27,15 +27,15 @@ jobs:
       - name: Checkout the files
         uses: actions/checkout@v2
 
-      # - name: Copy folder content recursively to remote
-      #   uses: garygrossgarten/github-action-scp@release
-      #   with:
-      #     local: ./
-      #     remote: /home/ubuntu/moodle-helper-nestjs/
-      #     host: ${{secrets.AWS_SERVER_HOSTNAME}}
-      #     port: ${{secrets.AWS_SERVER_PORT}}
-      #     privateKey: ${{secrets.AWS_PRIVATE_KEY}}
-      #     username: ${{secrets.AWS_SERVER_USERNAME}}
+      - name: Copy folder content recursively to remote
+        uses: garygrossgarten/github-action-scp@release
+        with:
+          local: ./
+          remote: /home/ubuntu/moodle-helper-nestjs/
+          host: ${{secrets.AWS_SERVER_HOSTNAME}}
+          port: ${{secrets.AWS_SERVER_PORT}}
+          privateKey: ${{secrets.AWS_PRIVATE_KEY}}
+          username: ${{secrets.AWS_SERVER_USERNAME}}
           
       - name: deploy backend
         uses: appleboy/ssh-action@master

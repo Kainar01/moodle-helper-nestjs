@@ -80,6 +80,20 @@ jobs:
             cd /home/ubuntu/moodle-helper-nestjs
             docker-compose up -d --build
             docker-compose exec -T backend yarn migration:run
+
+      - name: restart backend
+        uses: appleboy/ssh-action@master
+        
+        with:
+          host: ${{secrets.AWS_SERVER_HOSTNAME}}
+          port: ${{secrets.AWS_SERVER_PORT}}
+          key: ${{secrets.AWS_PRIVATE_KEY}}
+          username: ${{secrets.AWS_SERVER_USERNAME}}
+          script_stop: true
+          script: |
+            cd /home/ubuntu/moodle-helper-nestjs
+            docker-compose restart backend
+
         # run: |
         #   echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
         #   ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME}

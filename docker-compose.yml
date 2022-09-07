@@ -15,7 +15,7 @@ services:
       - POSTGRES_DB=moodle_bot
   
   backend:
-    shm_size: '4gb'
+    shm_size: '8gb'
     command: "yarn start"
     build:
       context: .

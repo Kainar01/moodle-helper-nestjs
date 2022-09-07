@@ -100,7 +100,7 @@ export class BotUpdate {
     const { title } = await this.assignmentService.updateAssignment(assignmentId, { status: AssignmentStatus.SUBMITTED });
 
     const msg = this.getMessage('assignments.submitted-assignment', { title });
-    await ctx.reply(`${msg}, ${TELEGRAM_EMOJIES.HALO}`, { parse_mode: 'Markdown' });
+    await ctx.reply(`${msg} ${TELEGRAM_EMOJIES.HALO}`, { parse_mode: 'Markdown' });
   }
 
   @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ASSIGNMENT_HIDE}\\d`))
@@ -113,7 +113,7 @@ export class BotUpdate {
     const { title } = await this.assignmentService.updateAssignment(assignmentId, { status: AssignmentStatus.HIDDEN });
 
     const msg = this.getMessage('assignments.hid-assignment', { title });
-    await ctx.reply(`${msg}, ${TELEGRAM_EMOJIES.HALO}`, { parse_mode: 'Markdown' });
+    await ctx.reply(`${msg} ${TELEGRAM_EMOJIES.HALO}`, { parse_mode: 'Markdown' });
   }
 
   @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ASSIGNMENT_NOTIFY_OPTIONS}\\d`))

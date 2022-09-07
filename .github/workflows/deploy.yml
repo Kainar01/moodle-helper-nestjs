@@ -27,18 +27,7 @@ jobs:
       - name: Checkout the files
         uses: actions/checkout@v2
 
-      - name: Copy folder content recursively to remote
-        uses: garygrossgarten/github-action-scp@release
-        with:
-          local: ./
-          remote: /home/ubuntu/moodle-helper-nestjs/
-          host: ${{secrets.AWS_SERVER_HOSTNAME}}
-          port: ${{secrets.AWS_SERVER_PORT}}
-          privateKey: ${{secrets.AWS_PRIVATE_KEY}}
-          username: ${{secrets.AWS_SERVER_USERNAME}}
-          
-      - name: deploy backend
-        uses: appleboy/ssh-action@master
+      - name: 'Create env file'
         env:
           DB_TYPE: ${{ secrets.DB_TYPE }}
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -52,6 +41,35 @@ jobs:
           NODE_ENV: ${{ secrets.NODE_ENV }}
           BOT_USER_VERIFICATION_DISABLE: ${{ secrets.BOT_USER_VERIFICATION_DISABLE }}
           APP_TIMEZONE: ${{ secrets.APP_TIMEZONE }}
+        run: |
+          touch .env
+          echo DB_TYPE=${{ secrets.DB_TYPE }} >> .env
+          echo DB_HOST=${{ secrets.DB_HOST }} >> .env
+          echo DB_PORT=${{ secrets.DB_PORT }} >> .env
+          echo DB_USER=${{ secrets.DB_USER }} >> .env
+          echo DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env
+          echo DB_NAME=${{ secrets.DB_NAME }} >> .env
+          echo REDIS_URL=${{ secrets.REDIS_URL }} >> .env
+          echo MOODLE_BOT_TOKEN=${{ secrets.MOODLE_BOT_TOKEN }} >> .env
+          echo BOT_MOODLE_URL=${{ secrets.BOT_MOODLE_URL }} >> .env
+          echo NODE_ENV=${{ secrets.NODE_ENV }} >> .env
+          echo BOT_USER_VERIFICATION_DISABLE=${{ secrets.BOT_USER_VERIFICATION_DISABLE }} >> .env
+          echo APP_TIMEZONE=${{ secrets.APP_TIMEZONE }} >> .env
+          cat .env
+
+      - name: Copy folder content recursively to remote
+        uses: garygrossgarten/github-action-scp@release
+        with:
+          local: ./
+          remote: /home/ubuntu/moodle-helper-nestjs/
+          host: ${{secrets.AWS_SERVER_HOSTNAME}}
+          port: ${{secrets.AWS_SERVER_PORT}}
+          privateKey: ${{secrets.AWS_PRIVATE_KEY}}
+          username: ${{secrets.AWS_SERVER_USERNAME}}
+
+      - name: deploy backend
+        uses: appleboy/ssh-action@master
+        
         with:
           host: ${{secrets.AWS_SERVER_HOSTNAME}}
           port: ${{secrets.AWS_SERVER_PORT}}

@@ -32,10 +32,10 @@ jobs:
         with:
           local: ./
           remote: /home/ubuntu/moodle-helper-nestjs/
-          host: 44.204.20.153
-          port: 22
+          host: ${{secrets.AWS_SERVER_HOSTNAME}}
+          port: ${{secrets.AWS_SERVER_PORT}}
           privateKey: ${{secrets.AWS_PRIVATE_KEY}}
-          username: ubuntu
+          username: ${{secrets.AWS_SERVER_USERNAME}}
           
       - name: deploy backend
         uses: appleboy/ssh-action@master
@@ -54,10 +54,10 @@ jobs:
           BOT_USER_VERIFICATION_DISABLE: ${{ secrets.BOT_USER_VERIFICATION_DISABLE }}
           APP_TIMEZONE: ${{ secrets.APP_TIMEZONE }}
         with:
-          host: 44.204.20.153
-          port: 22
-          username: ubuntu
-          key: ${{ secrets.AWS_PRIVATE_KEY }}
+          host: ${{secrets.AWS_SERVER_HOSTNAME}}
+          port: ${{secrets.AWS_SERVER_PORT}}
+          key: ${{secrets.AWS_PRIVATE_KEY}}
+          username: ${{secrets.AWS_SERVER_USERNAME}}
           script_stop: true
           script: |
             cd /home/ubuntu/moodle-helper-nestjs

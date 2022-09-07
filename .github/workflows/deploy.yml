@@ -32,10 +32,9 @@ jobs:
         with:
           local: ./
           remote: /home/ubuntu/moodle-helper-nestjs/
-          host: ${{secrets.AWS_SERVER_HOSTNAME}}
-          port: ${{secrets.AWS_SERVER_SSH_PORT}}
+          host: 44.204.20.153
           privateKey: ${{secrets.AWS_PRIVATE_KEY}}
-          username: ${{secrets.AWS_SERVER_USERNAME}}
+          username: ubuntu
           
       - name: deploy backend
         uses: appleboy/ssh-action@master
@@ -58,7 +57,6 @@ jobs:
           USER_NAME: ${{ secrets.USER_NAME  }}
         with:
           host: ${{secrets.AWS_SERVER_HOSTNAME}}
-          port: ${{secrets.AWS_SERVER_SSH_PORT}}
           username: ${{secrets.AWS_SERVER_USERNAME}}
           key: ${{ secrets.AWS_PRIVATE_KEY }}
           script_stop: true

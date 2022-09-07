@@ -8,7 +8,7 @@ class EnvironmentVariables implements AppEnvVars {
   NODE_ENV!: AppEnv;
 
   @IsNumberString()
-  PORT!: string;
+  PORT: string = '3000';
 
   @IsString()
   @IsNotEmpty()

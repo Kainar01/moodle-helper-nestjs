@@ -9,7 +9,7 @@ export const config: AppConfig = {
     migrations: [`${__dirname}/../../db/migration/**/*.{js,ts}`],
   },
   server: {
-    port: 3000,
+    port: Number(process.env.PORT) || 3000,
     cors: false,
   },
   bot: {

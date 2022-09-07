@@ -29,7 +29,7 @@ async function bootstrap(): Promise<string> {
   // Express Middleware
   middleware(app);
 
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(process.env.PORT);
 
   return app.getUrl();
 }

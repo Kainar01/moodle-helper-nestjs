@@ -33,6 +33,7 @@ jobs:
           local: ./
           remote: /home/ubuntu/moodle-helper-nestjs/
           host: 44.204.20.153
+          port: 22
           privateKey: ${{secrets.AWS_PRIVATE_KEY}}
           username: ubuntu
           
@@ -52,11 +53,9 @@ jobs:
           PORT: ${{ secrets.PORT }}
           BOT_USER_VERIFICATION_DISABLE: ${{ secrets.BOT_USER_VERIFICATION_DISABLE }}
           APP_TIMEZONE: ${{ secrets.APP_TIMEZONE }}
-          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
-          HOSTNAME: ${{ secrets.HOSTNAME  }}
-          USER_NAME: ${{ secrets.USER_NAME  }}
         with:
           host: 44.204.20.153
+          port: 22
           username: ubuntu
           key: ${{ secrets.AWS_PRIVATE_KEY }}
           script_stop: true

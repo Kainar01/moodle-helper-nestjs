@@ -8,7 +8,7 @@ export class UserEntity implements User {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id!: number;
 
-  @Column('int', { nullable: false, name: 'telegram_user_id' })
+  @Column('int', { nullable: false, name: 'telegram_user_id', unique: true })
   telegramUserId!: number;
 
   @Column('varchar', { nullable: false, name: 'chat_id' })

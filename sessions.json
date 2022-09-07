@@ -3,7 +3,11 @@
     {
       "id": "884721983:884721983",
       "data": {
-        "__scenes": {}
+        "__scenes": {
+          "current": "init",
+          "state": {},
+          "cursor": 1
+        }
       }
     }
   ]

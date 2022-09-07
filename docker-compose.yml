@@ -20,16 +20,8 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
     environment:
       - NODE_ENV=development
-      # - DB_HOST=db
-      # - REDIS_URL=redis://redis:6379
     depends_on:
       - db
     ports:

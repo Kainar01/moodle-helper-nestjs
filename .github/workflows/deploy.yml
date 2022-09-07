@@ -27,6 +27,16 @@ jobs:
       - name: Checkout the files
         uses: actions/checkout@v2
 
+      - name: Copy folder content recursively to remote
+        uses: garygrossgarten/github-action-scp@release
+        with:
+          local: ./
+          remote: /home/ubuntu/moodle-helper-nestjs/
+          host: ${{secrets.AWS_SERVER_HOSTNAME}}
+          port: ${{secrets.AWS_SERVER_SSH_PORT}}
+          privateKey: ${{secrets.AWS_PRIVATE_KEY}}
+          username: ${{secrets.AWS_SERVER_USERNAME}}
+          
       - name: deploy backend
         uses: appleboy/ssh-action@master
         env:
@@ -47,18 +57,17 @@ jobs:
           HOSTNAME: ${{ secrets.HOSTNAME  }}
           USER_NAME: ${{ secrets.USER_NAME  }}
         with:
-          host: ${{ secrets.HOSTNAME }}
-          username: ${{ secrets.USER_NAME }}
-          port: ${{ secrets.AWS_SERVER_PORT }}
+          host: ${{secrets.AWS_SERVER_HOSTNAME}}
+          port: ${{secrets.AWS_SERVER_SSH_PORT}}
+          username: ${{secrets.AWS_SERVER_USERNAME}}
           key: ${{ secrets.AWS_PRIVATE_KEY }}
-          command_timeout: 30m
           script_stop: true
           script: |
-            cd /home/ubuntu/moodle-helper-nestjs &&
-            git checkout master &&
-            git fetch --all &&
-            git reset --hard origin/master &&
-            git pull origin master &&
+            cd /home/ubuntu/moodle-helper-nestjs
+            git checkout master
+            git fetch --all
+            git reset --hard origin/master
+            git pull origin master
             docker-compose up -d --build
             docker-compose exec -T backend yarn migration:run
         # run: |

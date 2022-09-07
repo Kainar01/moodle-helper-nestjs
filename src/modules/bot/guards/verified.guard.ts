@@ -19,7 +19,7 @@ export class BotVerifiedGuard implements CanActivate {
     const isAdmin = botContext.user.role && [UserRole.ADMIN, UserRole.SUPERADMIN].includes(botContext.user.role);
     if (!botContext.user.verified && !isAdmin) {
       throw new TelegrafException(
-        `Вы не верифицированы для этого действия. Вам нужно будет сделать запрос на админа\n\n/${BotCommand.REQUEST_VERIFY}`,
+        `Вы не верифицированы для этого действия. Вам нужно будет сделать запрос на админа\n\n/${BotCommand.REQUEST_VERIFY} - Запросить доступ`,
       );
     }
 

@@ -42,7 +42,7 @@ export class DriverService {
 
       return new Builder()
         .forBrowser('firefox')
-        .setFirefoxOptions(options.windowSize(screen))
+        .setFirefoxOptions(options.headless().windowSize(screen))
         .build();
     } catch (err) {
       return null;

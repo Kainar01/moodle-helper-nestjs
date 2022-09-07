@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import moment from 'moment-timezone';
 import type { EntityManager, Repository } from 'typeorm';
-
-import { ConfigService } from '@/common';
 
 import { ScheduleEntity, UserScheduleEntity } from '../entities';
 import type { Schedule, ScheduleHour, UserSchedule } from '../interfaces';

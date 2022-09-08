@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { TelegrafExecutionContext, TelegrafException } from 'nestjs-telegraf';
+import { TelegrafExecutionContext } from 'nestjs-telegraf';
 
+import { ValidationException } from '../exceptions';
 import type { BotContext } from '../interfaces';
 
 @Injectable()
@@ -11,7 +12,7 @@ export class BotMoodleAuthGuard implements CanActivate {
 
     const { moodlePassword, moodleUsername } = botContext.user;
     if (!moodleUsername || !moodlePassword) {
-      throw new TelegrafException(
+      throw new ValidationException(
         'Прежде чем пользоваться командой, мне нужны данные от твоей мудл системы\n\n/init - Ввести данные от мудл системы',
       );
     }

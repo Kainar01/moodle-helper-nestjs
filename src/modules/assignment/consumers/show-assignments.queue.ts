@@ -1,4 +1,4 @@
-import { OnQueueActive, Process, Processor } from '@nestjs/bull';
+import { OnQueueActive, OnQueueFailed, Process, Processor } from '@nestjs/bull';
 import type { Job } from 'bull';
 import { isEmpty } from 'lodash';
 import moment from 'moment-timezone';
@@ -52,6 +52,7 @@ export class ShowAssignmentsConsumer {
       await this.sendMessage(user.chatId, message);
       // allow user to make another request
       await this.userService.updateUser(job.data.userId, { lastAssignmentNotification: null, lastAssignmentRequest: null });
+      throw err;
     }
   }
 
@@ -75,6 +76,11 @@ export class ShowAssignmentsConsumer {
       const message = this.i18n.translate<string>('assignments.job.processing');
       await this.sendMessage(user.chatId, `${message} ${TELEGRAM_EMOJIES.PLEASED}`, { parse_mode: 'Markdown' });
     }
+  }
+
+  @OnQueueFailed()
+  public onJobFailed(job: Job<ShowAssignmentJobData>, error: Error) {
+    console.error(`Get assignment job ${job.id} failed data =`, JSON.stringify(job.data), error);
   }
 
   private async sendMessage(chatId: string, message: string, extra?: ExtraReplyMessage) {

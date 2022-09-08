@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { TelegrafExecutionContext, TelegrafException } from 'nestjs-telegraf';
+import { TelegrafExecutionContext } from 'nestjs-telegraf';
 
+import { ValidationException } from '../exceptions';
 import type { BotContext } from '../interfaces';
 
 @Injectable()
@@ -10,7 +11,7 @@ export class BotNotVerifiedGuard implements CanActivate {
     const botContext = ctx.getContext<BotContext>();
 
     if (botContext.user.verified) {
-      throw new TelegrafException('Вы уже верифицированы');
+      throw new ValidationException('Вы уже верифицированы');
     }
 
     return true;

@@ -44,6 +44,7 @@ export class AssignmentNotificationConsumer {
     } catch (err) {
       const message = this.i18n.translate<string>('notification.error', { args: { error: (<Error>err).message } });
       await this.sendMessage(chatId, message);
+      throw err;
     }
   }
 

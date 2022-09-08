@@ -1,8 +1,9 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { TelegrafExecutionContext, TelegrafException } from 'nestjs-telegraf';
+import { TelegrafExecutionContext } from 'nestjs-telegraf';
 
 import { UserRole } from '@/modules/user';
 
+import { ValidationException } from '../exceptions';
 import type { BotContext } from '../interfaces';
 
 @Injectable()
@@ -12,7 +13,7 @@ export class BotSuperAdminGuard implements CanActivate {
     const botContext = ctx.getContext<BotContext>();
 
     if (!botContext.user.role || ![UserRole.SUPERADMIN].includes(botContext.user.role)) {
-      throw new TelegrafException('You are not allowed 😡');
+      throw new ValidationException('You are not allowed 😡');
     }
 
     return true;

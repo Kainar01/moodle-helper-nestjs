@@ -1,9 +1,10 @@
 import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
-import { TelegrafExecutionContext, TelegrafException } from 'nestjs-telegraf';
+import { TelegrafExecutionContext } from 'nestjs-telegraf';
 
 import { ConfigService } from '@/common';
 import { UserRole } from '@/modules/user';
 
+import { ValidationException } from '../exceptions';
 import { BotCommand, BotContext } from '../interfaces';
 
 @Injectable()
@@ -18,7 +19,7 @@ export class BotVerifiedGuard implements CanActivate {
 
     const isAdmin = botContext.user.role && [UserRole.ADMIN, UserRole.SUPERADMIN].includes(botContext.user.role);
     if (!botContext.user.verified && !isAdmin) {
-      throw new TelegrafException(
+      throw new ValidationException(
         `Вы не верифицированы для этого действия. Вам нужно будет сделать запрос на админа\n\n/${BotCommand.REQUEST_VERIFY} - Запросить доступ`,
       );
     }

@@ -1,0 +1,1 @@
+export const FEEDBACK_COOLDOWN_IN_MINUTES = 3;

@@ -80,7 +80,7 @@ export class NotificationService {
     if (notifications.length >= this.MAX_NOTIFICATION_COUNT) {
       const scheduledNotifications = notifications.map((notification: Date) => moment(notification).calendar()).join(', ');
       throw new Error(
-        `Нельзя скедулить ${this.MAX_NOTIFICATION_COUNT} уведомлении на один ассайнмент\n\nВаши уведомление на этот ассайнмент: <b>${scheduledNotifications}</b>`,
+        `Нельзя скедулить ${this.MAX_NOTIFICATION_COUNT} уведомлении на один ассайнмент\n\nВаши уведомление на этот ассайнмент: *${scheduledNotifications}*`,
       );
     }
 

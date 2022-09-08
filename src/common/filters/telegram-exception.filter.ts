@@ -9,7 +9,7 @@ export class TelegrafExceptionFilter implements ExceptionFilter {
     const telegrafHost = TelegrafArgumentsHost.create(host);
     const ctx = telegrafHost.getContext<BotContext>();
     console.error(exception);
-    await ctx.replyWithHTML(`<b>Error</b>: ${exception.message}`);
+    await ctx.reply(`*Error*: ${exception.message}`, { parse_mode: 'Markdown' });
     await ctx.scene.leave();
   }
 }

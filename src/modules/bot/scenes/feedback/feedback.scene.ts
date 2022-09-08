@@ -5,6 +5,7 @@ import { Action, Ctx, Message, Next, Wizard, WizardStep } from 'nestjs-telegraf'
 import type { Scenes } from 'telegraf';
 
 import { TelegrafExceptionFilter } from '@/common/filters';
+import { FeedbackService } from '@/modules/feedback';
 import { User, UserService } from '@/modules/user';
 
 import { MOODLE_BOT_SCENES, TELEGRAM_EMOJIES } from '../../bot.constants';
@@ -17,7 +18,7 @@ import { FEEDBACK_SCENE_ACTIONS, FEEDBACK_SCENE_STEPS } from './feedback.constan
 export class FeedbackScene extends BaseScene {
   private FEEDBACK_KEY: string = 'feedback';
 
-  constructor(@I18n() i18n: I18nService, private userService: UserService) {
+  constructor(@I18n() i18n: I18nService, private userService: UserService, private feedbackService: FeedbackService) {
     super(i18n);
   }
 
@@ -102,20 +103,24 @@ export class FeedbackScene extends BaseScene {
     await this.leaveScene(ctx);
   }
 
-  // TODO: move to verification module
   private async sendFeedback(ctx: Scenes.WizardContext, adminChatId: string, user: User) {
+    const feedbackMessage = this.getFeedback(ctx);
+
+    const feedback = await this.feedbackService.saveFeedback({ chatId: user.chatId, message: feedbackMessage });
+
     const message = this.getMessage('feedback.feedback-left', {
       name: user.name,
       userId: user.telegramUserId,
-      feedback: this.getFeedback(ctx),
+      feedback: feedback.message,
     });
+
     await ctx.telegram.sendMessage(adminChatId, message, {
       parse_mode: 'Markdown',
     });
   }
 
   private getFeedback(ctx: Scenes.WizardContext) {
-    return <number[]> this.getState(ctx)[this.FEEDBACK_KEY];
+    return <string> this.getState(ctx)[this.FEEDBACK_KEY];
   }
 
   private setFeedback(ctx: Scenes.WizardContext, feedback: string) {

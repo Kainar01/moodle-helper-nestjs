@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AssignmentModule } from '../assignment';
+import { FeedbackModule } from '../feedback';
 import { NotificationModule } from '../notification';
 import { UserModule } from '../user';
 import { WebScraperModule } from '../webscraper';
@@ -13,7 +14,7 @@ import { ScheduleScene } from './scenes/schedule/schedule.scene';
 import { MoodleBotService } from './services';
 
 @Module({
-  imports: [UserModule, NotificationModule, WebScraperModule, AssignmentModule],
+  imports: [UserModule, NotificationModule, WebScraperModule, AssignmentModule, FeedbackModule],
   providers: [BotUpdate, InitScene, ScheduleScene, NotifyAssignmentScene, RequestVerifyScene, FeedbackScene, MoodleBotService],
   exports: [MoodleBotService],
 })

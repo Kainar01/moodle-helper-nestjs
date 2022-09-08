@@ -119,7 +119,7 @@ export class RequestVerifyScene extends BaseScene {
   }
 
   private getName(ctx: Scenes.WizardContext) {
-    return <number[]> this.getState(ctx)[this.NAME_KEY];
+    return <string> this.getState(ctx)[this.NAME_KEY];
   }
 
   private setName(ctx: Scenes.WizardContext, name: string) {

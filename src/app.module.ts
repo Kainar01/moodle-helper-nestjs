@@ -12,13 +12,17 @@ import { TelegrafModule } from 'nestjs-telegraf';
 
 import { CommonModule, LoggerMiddleware } from './common';
 import { configuration, validateEnv } from './config';
-import { BotModule, UserModule } from './modules';
-import { AssignmentModule } from './modules/assignment';
+import {
+  BotModule,
+  UserModule,
+  AssignmentModule,
+  BullBoardModule,
+  FeedbackModule,
+  NotificationModule,
+  WebScraperModule,
+} from './modules';
 import { MOODLE_BOT_NAME } from './modules/bot';
 import { sessionMiddleware } from './modules/bot/middlewares';
-import { BullBoardModule } from './modules/bull-board';
-import { NotificationModule } from './modules/notification';
-import { WebScraperModule } from './modules/webscraper';
 
 @Module({
   imports: [
@@ -69,6 +73,7 @@ import { WebScraperModule } from './modules/webscraper';
     UserModule,
     BotModule,
     NotificationModule,
+    FeedbackModule,
     BullBoardModule,
     // Module Router
     // https://docs.nestjs.com/recipes/router-module

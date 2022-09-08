@@ -86,8 +86,14 @@ export class BotUpdate {
 
   @UseGuards(BotNotVerifiedGuard)
   @Command(BotCommand.REQUEST_VERIFY)
-  public async onRequestVerifytCommand(@Ctx() ctx: BotContext): Promise<string | void> {
+  public async onRequestVerifyCommand(@Ctx() ctx: BotContext): Promise<string | void> {
     await ctx.scene.enter(MOODLE_BOT_SCENES.REQUEST_VERIFY);
+  }
+
+  @UseGuards(BotNotVerifiedGuard)
+  @Command(BotCommand.LEAVE_FEEDBACK)
+  public async onLeaveFeedbackCommand(@Ctx() ctx: BotContext): Promise<string | void> {
+    await ctx.scene.enter(MOODLE_BOT_SCENES.FEEDBACK);
   }
 
   @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ASSIGNMENT_SUBMIT}\\d`))

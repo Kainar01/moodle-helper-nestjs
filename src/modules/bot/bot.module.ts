@@ -5,6 +5,7 @@ import { NotificationModule } from '../notification';
 import { UserModule } from '../user';
 import { WebScraperModule } from '../webscraper';
 import { BotUpdate } from './bot.update';
+import { FeedbackScene } from './scenes/feedback/feedback.scene';
 import { InitScene } from './scenes/init/init.scene';
 import { NotifyAssignmentScene } from './scenes/notify-assignment/notify-assignment.scene';
 import { RequestVerifyScene } from './scenes/request-verify/request-verify.scene';
@@ -13,7 +14,7 @@ import { MoodleBotService } from './services';
 
 @Module({
   imports: [UserModule, NotificationModule, WebScraperModule, AssignmentModule],
-  providers: [BotUpdate, InitScene, ScheduleScene, NotifyAssignmentScene, RequestVerifyScene, MoodleBotService],
+  providers: [BotUpdate, InitScene, ScheduleScene, NotifyAssignmentScene, RequestVerifyScene, FeedbackScene, MoodleBotService],
   exports: [MoodleBotService],
 })
 export class BotModule {}

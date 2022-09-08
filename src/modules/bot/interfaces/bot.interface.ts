@@ -10,7 +10,7 @@ export enum BotCommand {
   ASSIGNMENTS = 'assignments',
   NOTIFY_ASSIGNMENT = 'notifyassignment',
   REQUEST_VERIFY = 'requestverify',
-  REQUEST_SUPERADMIN = 'requestsuperadmin',
+  LEAVE_FEEDBACK = 'feedback',
 }
 
 export enum BotAction {

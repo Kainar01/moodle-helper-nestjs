@@ -5,6 +5,7 @@ export const MOODLE_BOT_SCENES = {
   SCHEDULE: 'schedule',
   NOTIFY_ASSIGNMENT: 'notify-assignment',
   REQUEST_VERIFY: 'request-verify',
+  FEEDBACK: 'feedback',
 };
 
 export const MOODLE_BOT_ACTIONS = {

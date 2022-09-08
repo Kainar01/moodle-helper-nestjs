@@ -51,6 +51,6 @@ export type AppEnvVars = {
   REDIS_URL: string;
   BOT_MOODLE_URL: string;
   MOODLE_BOT_TOKEN: string;
-  APP_TIMEZONE: string;
+  TZ: string;
   BOT_USER_VERIFICATION_DISABLE: string;
 };

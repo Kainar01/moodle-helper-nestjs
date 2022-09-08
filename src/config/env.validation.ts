@@ -51,7 +51,7 @@ class EnvironmentVariables implements AppEnvVars {
 
   @IsString()
   @IsNotEmpty()
-  APP_TIMEZONE!: string;
+  TZ!: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

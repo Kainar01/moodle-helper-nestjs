@@ -18,7 +18,7 @@ async function bootstrap(): Promise<string> {
     bufferLogs: true,
   });
 
-  moment.tz.setDefault(process.env.APP_TIMEZONE);
+  moment.tz.setDefault(process.env.TZ);
 
   app.useLogger(await app.resolve(Logger));
 

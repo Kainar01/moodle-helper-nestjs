@@ -40,7 +40,7 @@ jobs:
           BOT_MOODLE_URL: ${{ secrets.BOT_MOODLE_URL }}
           NODE_ENV: ${{ secrets.NODE_ENV }}
           BOT_USER_VERIFICATION_DISABLE: ${{ secrets.BOT_USER_VERIFICATION_DISABLE }}
-          APP_TIMEZONE: ${{ secrets.APP_TIMEZONE }}
+          TZ: ${{ secrets.TZ }}
         run: |
           touch .env
           echo DB_TYPE=${{ secrets.DB_TYPE }} >> .env
@@ -54,7 +54,7 @@ jobs:
           echo BOT_MOODLE_URL=${{ secrets.BOT_MOODLE_URL }} >> .env
           echo NODE_ENV=${{ secrets.NODE_ENV }} >> .env
           echo BOT_USER_VERIFICATION_DISABLE=${{ secrets.BOT_USER_VERIFICATION_DISABLE }} >> .env
-          echo APP_TIMEZONE=${{ secrets.APP_TIMEZONE }} >> .env
+          echo TZ=${{ secrets.TZ }} >> .env
           cat .env
 
       - name: Copy folder content recursively to remote

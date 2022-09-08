@@ -4,7 +4,7 @@ export const config : AppEnvConfig = {
   db: {
     type: 'postgres',
     synchronize: false,
-    logging: false,
+    logging: true,
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),
     username: process.env.DB_USER,

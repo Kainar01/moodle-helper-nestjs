@@ -9,7 +9,7 @@ export class ChatEntity implements Chat {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id!: number;
 
-  @Column('int', { nullable: false, name: 'chat_id', unique: true })
+  @Column('bigint', { nullable: false, name: 'telegram_chat_id', unique: true })
   telegramChatId!: number;
 
   @Column('varchar', { nullable: false, name: 'name' })
@@ -19,7 +19,7 @@ export class ChatEntity implements Chat {
   type!: ChatType;
 
   @Index()
-  @Column({ type: 'enum', enum: ChatGroupType, nullable: false, default: null, name: 'chat_group_type', unique: true })
+  @Column({ type: 'enum', enum: ChatGroupType, nullable: true, default: null, name: 'chat_group_type', unique: true })
   chatGroupType!: ChatGroupType | null;
 
   @Column('varchar', { nullable: true, name: 'moodle_username' })

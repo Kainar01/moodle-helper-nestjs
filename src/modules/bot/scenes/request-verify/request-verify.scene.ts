@@ -3,9 +3,9 @@ import _ from 'lodash';
 import { I18n, I18nService } from 'nestjs-i18n';
 import { Action, Ctx, Message, Next, Wizard, WizardStep } from 'nestjs-telegraf';
 import type { Scenes } from 'telegraf';
-import type { Chat } from 'telegraf/typings/core/types/typegram';
 
 import { TelegrafExceptionFilter } from '@/common/filters/telegram-exception.filter';
+import type { Chat } from '@/modules/chat/chat.interface';
 import { ChatService } from '@/modules/chat/chat.service';
 
 import { MOODLE_BOT_ACTIONS, MOODLE_BOT_SCENES, TELEGRAM_EMOJIES } from '../../bot.constants';
@@ -105,15 +105,15 @@ export class RequestVerifyScene extends BaseScene {
 
   // TODO: move to verification module
   private async sendAdminRequest(ctx: Scenes.WizardContext, adminChatId: number, chat: Chat) {
-    const message = this.getMessage('request-verify.incoming-request', { name: this.getName(ctx), userId: chat.id });
+    const message = this.getMessage('request-verify.incoming-request', { name: this.getName(ctx), chatId: chat.telegramChatId });
     await ctx.telegram.sendMessage(adminChatId, message, {
       parse_mode: 'Markdown',
       reply_markup: {
         remove_keyboard: true,
         one_time_keyboard: true,
         inline_keyboard: [
-          [{ text: `Активировать${TELEGRAM_EMOJIES.CHECK_MARK}`, callback_data: `${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_CONFIRM}${chat.id}` }],
-          [{ text: `Отклонить${TELEGRAM_EMOJIES.CROSS_MARK}`, callback_data: `${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE}${chat.id}` }],
+          [{ text: `Активировать${TELEGRAM_EMOJIES.CHECK_MARK}`, callback_data: `${MOODLE_BOT_ACTIONS.VERIFICATION_REQUEST_CONFIRM}${chat.id}` }],
+          [{ text: `Отклонить${TELEGRAM_EMOJIES.CROSS_MARK}`, callback_data: `${MOODLE_BOT_ACTIONS.VERIFICATION_REQUEST_DECLINE}${chat.id}` }],
         ],
       },
     });

@@ -9,12 +9,12 @@ import { Logger } from '@/common/logger/logger';
 
 import { AssignmentStatus } from '../assignment/interfaces/assignment.interface';
 import { AssignmentService } from '../assignment/services/assignment.service';
-import { Chat, ChatType, type TelegramChat } from '../chat/chat.interface';
+import { Chat, ChatGroupType, ChatType, type TelegramChat } from '../chat/chat.interface';
 import { ChatService } from '../chat/chat.service';
 import { MOODLE_BOT_ACTIONS, MOODLE_BOT_NAME, MOODLE_BOT_SCENES, TELEGRAM_EMOJIES } from './bot.constants';
 import { CtxChat } from './decorators/chat.decorator';
-import { BotAdminGuard } from './guards/admin.guard';
 import { BotMoodleAuthGuard } from './guards/moodle-auth.guard';
+import { BotNotAssignedGuard } from './guards/not-assigned.guard';
 import { BotNotVerifiedGuard } from './guards/not-verified.guard';
 import { BotVerifiedGuard } from './guards/verified.guard';
 import { type BotContext, BotCommand } from './interfaces/bot.interface';
@@ -54,10 +54,82 @@ export class BotUpdate {
     }
   }
 
-  @Command('admin')
-  @UseGuards(BotAdminGuard)
-  public onAdminCommand(): string {
-    return 'Welcome judge';
+  @UseGuards(BotNotAssignedGuard)
+  @Command(BotCommand.REQUEST_ADMIN)
+  public async onRequestAdminCommand(@Ctx() ctx: BotContext, @CtxChat() chat: Chat) {
+    const superAdminChat = await this.chatService.findSuperAdminChat();
+
+    if (superAdminChat) {
+      const { telegramChatId: adminChatId } = superAdminChat;
+      const message = this.getMessage('admin.incoming-request', { chatId: adminChatId, name: chat.name });
+
+      await ctx.telegram.sendMessage(superAdminChat.telegramChatId, message, {
+        reply_markup: {
+          remove_keyboard: true,
+          one_time_keyboard: true,
+          inline_keyboard: [
+            [
+              {
+                text: `Подтвердить${TELEGRAM_EMOJIES.CHECK_MARK}`,
+                callback_data: `${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_CONFIRM}${chat.id}`,
+              },
+            ],
+            [
+              {
+                text: `Отклонить${TELEGRAM_EMOJIES.CROSS_MARK}`,
+                callback_data: `${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE}${chat.id}`,
+              },
+            ],
+          ],
+        },
+        parse_mode: 'Markdown',
+      });
+      const adminRequestMsg = this.getMessage('admin.requested-admin');
+
+      await ctx.reply(`${adminRequestMsg} ${TELEGRAM_EMOJIES.FOLDED_HANDS}`);
+    } else {
+      const message = this.getMessage('admin.no-superadmin');
+      throw new Error(message);
+    }
+  }
+
+  @UseGuards(BotNotAssignedGuard)
+  @Command(BotCommand.MAKE_ERROR_CHAT)
+  public async onMakeErrorChatCommand(@Ctx() ctx: BotContext, @CtxChat() chat: Chat) {
+    const superAdminChat = await this.chatService.findSuperAdminChat();
+
+    if (superAdminChat) {
+      const { telegramChatId: adminChatId } = superAdminChat;
+      const message = this.getMessage('admin.error-chat.incoming-request', { chatId: adminChatId, name: chat.name });
+
+      await ctx.telegram.sendMessage(adminChatId, message, {
+        reply_markup: {
+          remove_keyboard: true,
+          one_time_keyboard: true,
+          inline_keyboard: [
+            [
+              {
+                text: `Подтвердить${TELEGRAM_EMOJIES.CHECK_MARK}`,
+                callback_data: `${MOODLE_BOT_ACTIONS.ERROR_CHAT_REQUEST_CONFIRM}${chat.id}`,
+              },
+            ],
+            [
+              {
+                text: `Отклонить${TELEGRAM_EMOJIES.CROSS_MARK}`,
+                callback_data: `${MOODLE_BOT_ACTIONS.ERROR_CHAT_REQUEST_DECLINE}${chat.id}`,
+              },
+            ],
+          ],
+        },
+        parse_mode: 'Markdown',
+      });
+      const adminRequestMsg = this.getMessage('admin.error-chat.requested');
+
+      await ctx.reply(`${adminRequestMsg} ${TELEGRAM_EMOJIES.FOLDED_HANDS}`);
+    } else {
+      const message = this.getMessage('admin.no-superadmin');
+      throw new Error(message);
+    }
   }
 
   @UseGuards(BotVerifiedGuard)
@@ -140,7 +212,7 @@ export class BotUpdate {
   }
 
   @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_CONFIRM}\\d`))
-  public async onRequestConfirmAction(@Ctx() ctx: BotContext): Promise<void> {
+  public async onAdminRequestConfirmAction(@Ctx() ctx: BotContext): Promise<void> {
     await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
 
     const actionData = this.getCallbackData(ctx);
@@ -149,7 +221,93 @@ export class BotUpdate {
     const requestChat = await this.chatService.findChatById(requestChatId);
 
     if (!requestChat) {
-      throw new Error(`Пользователь не существует requestChatId=${requestChatId}`);
+      throw new Error(`Чат не существует requestChatId=${requestChatId}`);
+    }
+
+    const oldAdminChat = await this.chatService.assignChatGroup(requestChat.id, ChatGroupType.ADMIN);
+
+    if (oldAdminChat) {
+      await this.alertUnassignOldChat(ctx, oldAdminChat, ChatGroupType.ADMIN);
+    }
+
+    const message = this.getMessage('admin.request-confirmed');
+
+    await ctx.telegram.sendMessage(requestChat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.HALO}`);
+  }
+
+  @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE}\\d`))
+  public async onAdminRequestDeclineAction(@Ctx() ctx: BotContext): Promise<void> {
+    await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
+
+    const actionData = this.getCallbackData(ctx);
+    const requestChatId = Number(actionData.replace(MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE, ''));
+
+    const requestChat = await this.chatService.findChatById(requestChatId);
+
+    if (!requestChat) {
+      throw new Error(`Чат не существует requestChatId=${requestChatId}`);
+    }
+
+    const message = this.getMessage('admin.request-declined');
+
+    await ctx.telegram.sendMessage(requestChat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.CONFUSED}`);
+  }
+
+  @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ERROR_CHAT_REQUEST_CONFIRM}\\d`))
+  public async onMakeErrorChatConfirmAction(@Ctx() ctx: BotContext): Promise<void> {
+    await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
+
+    const actionData = this.getCallbackData(ctx);
+    const requestChatId = Number(actionData.replace(MOODLE_BOT_ACTIONS.ERROR_CHAT_REQUEST_CONFIRM, ''));
+
+    const requestChat = await this.chatService.findChatById(requestChatId);
+
+    if (!requestChat) {
+      throw new Error(`Чат не существует requestChatId=${requestChatId}`);
+    }
+
+    const oldErrorChat = await this.chatService.assignChatGroup(requestChat.id, ChatGroupType.ERROR);
+
+    if (oldErrorChat) {
+      await this.alertUnassignOldChat(ctx, oldErrorChat, ChatGroupType.ERROR);
+    }
+
+    await this.chatService.updateChat(requestChat.id, { chatGroupType: ChatGroupType.ERROR });
+
+    const message = this.getMessage('admin.error-chat.request-confirmed');
+
+    await ctx.telegram.sendMessage(requestChat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.HALO}`);
+  }
+
+  @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ERROR_CHAT_REQUEST_DECLINE}\\d`))
+  public async onMakeErrorChatDeclineAction(@Ctx() ctx: BotContext): Promise<void> {
+    await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
+
+    const actionData = this.getCallbackData(ctx);
+    const requestChatId = Number(actionData.replace(MOODLE_BOT_ACTIONS.ERROR_CHAT_REQUEST_DECLINE, ''));
+
+    const requestChat = await this.chatService.findChatById(requestChatId);
+
+    if (!requestChat) {
+      throw new Error(`Чат не существует requestChatId=${requestChatId}`);
+    }
+
+    const message = this.getMessage('admin.error-chat.request-declined');
+
+    await ctx.telegram.sendMessage(requestChat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.CONFUSED}`);
+  }
+
+  @Action(new RegExp(`${MOODLE_BOT_ACTIONS.VERIFICATION_REQUEST_CONFIRM}\\d`))
+  public async onRequestConfirmAction(@Ctx() ctx: BotContext): Promise<void> {
+    await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
+
+    const actionData = this.getCallbackData(ctx);
+    const requestChatId = Number(actionData.replace(MOODLE_BOT_ACTIONS.VERIFICATION_REQUEST_CONFIRM, ''));
+
+    const requestChat = await this.chatService.findChatById(requestChatId);
+
+    if (!requestChat) {
+      throw new Error(`Чат не существует requestChatId=${requestChatId}`);
     }
 
     await this.chatService.updateChat(requestChat.id, { verified: true });
@@ -159,17 +317,17 @@ export class BotUpdate {
     await ctx.telegram.sendMessage(requestChat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.HALO}`);
   }
 
-  @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE}\\d`))
+  @Action(new RegExp(`${MOODLE_BOT_ACTIONS.VERIFICATION_REQUEST_DECLINE}\\d`))
   public async onRequestDeclineAction(@Ctx() ctx: BotContext): Promise<void> {
     await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
 
     const actionData = this.getCallbackData(ctx);
-    const requestChatId = Number(actionData.replace(MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE, ''));
+    const requestChatId = Number(actionData.replace(MOODLE_BOT_ACTIONS.VERIFICATION_REQUEST_DECLINE, ''));
 
     const requestChat = await this.chatService.findChatById(requestChatId);
 
     if (!requestChat) {
-      throw new Error(`Пользователь не существует requestChatId=${requestChatId}`);
+      throw new Error(`Чат не существует requestChatId=${requestChatId}`);
     }
 
     const message = this.getMessage('request-verify.request-declined');
@@ -181,6 +339,45 @@ export class BotUpdate {
   public onMessage(): string {
     const message = this.getMessage('bot.wish');
     return `${message} ${TELEGRAM_EMOJIES.HALO}`;
+  }
+
+  private async alertUnassignOldChat(
+    ctx: BotContext,
+    oldAssignedChat: Pick<Chat, 'name' | 'telegramChatId'>,
+    assignedChatGroupType: ChatGroupType,
+  ) {
+    const superAdminChat = await this.chatService.findSuperAdminChat();
+
+    if (!superAdminChat) {
+      throw new Error('Нет суперадмина');
+    }
+
+    if (oldAssignedChat) {
+      const { messageForSuperadmin, messageForOldAssignedChat } = this.getUnnassignedOldChatMessages(
+        oldAssignedChat,
+        assignedChatGroupType,
+      );
+      await ctx.telegram.sendMessage(superAdminChat.telegramChatId, `${messageForSuperadmin} ${TELEGRAM_EMOJIES.CROSS_MARK}`, {
+        parse_mode: 'Markdown',
+      });
+
+      await ctx.telegram.sendMessage(oldAssignedChat.telegramChatId, messageForOldAssignedChat);
+    }
+  }
+
+  private getUnnassignedOldChatMessages(oldAssignedChat: Pick<Chat, 'name' | 'telegramChatId'>, assignedChatGroupType: ChatGroupType) {
+    const messageForSuperadmin = this.getMessage(
+      assignedChatGroupType === ChatGroupType.ADMIN ? 'admin.old-admin-removed' : 'admin.error-chat.old-removed',
+      { name: oldAssignedChat.name },
+    );
+    const messageForOldAssignedChat = this.getMessage(
+      assignedChatGroupType === ChatGroupType.ADMIN ? 'admin.admin-unassigned' : 'admin.error-chat.unassigned',
+    );
+
+    return {
+      messageForSuperadmin,
+      messageForOldAssignedChat,
+    };
   }
 
   private useUserMiddleware(): void {

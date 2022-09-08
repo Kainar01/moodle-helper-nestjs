@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { Repository, UpdateResult } from 'typeorm';
+import type { EntityManager, Repository, UpdateResult } from 'typeorm';
 
 import { ScheduleHour } from '../schedule/schedule.interface';
 import { ScheduleService } from '../schedule/schedule.service';
@@ -26,6 +26,10 @@ export class ChatService {
     return this.chatRepository.findOne({ where: { chatGroupType: ChatGroupType.ADMIN } });
   }
 
+  public async findSuperAdminChat() {
+    return this.chatRepository.findOne({ where: { chatGroupType: ChatGroupType.SUPERADMIN } });
+  }
+
   public async findErrorChat() {
     return this.chatRepository.findOne({ where: { chatGroupType: ChatGroupType.ERROR } });
   }
@@ -42,13 +46,32 @@ export class ChatService {
     return chat;
   }
 
-  public async updateChat(id: number, dto: UpdateChatDto): Promise<Chat> {
-    return this.chatRepository
+  public async updateChat(id: number, dto: UpdateChatDto, entityManager?: EntityManager): Promise<ChatEntity> {
+    let chatRepository;
+    if (entityManager) chatRepository = entityManager.createQueryBuilder(ChatEntity, 'c');
+    else chatRepository = this.chatRepository;
+
+    return chatRepository
       .createQueryBuilder()
       .update(dto)
       .returning('*')
       .where({ id })
       .execute()
       .then((result: UpdateResult) => (<[Chat]>result.raw)[0]);
+  }
+
+  public async assignChatGroup(id: number, chatGroupType: ChatGroupType) {
+    const oldAdminChat = await this.chatRepository
+      .createQueryBuilder('c')
+      .update()
+      .set({ chatGroupType: null })
+      .where({ chatGroupType })
+      .returning('name, telegram_chat_id as "telegramChatId"')
+      .execute()
+      .then((res: UpdateResult) => <Chat>res.raw[0]);
+
+    await this.updateChat(id, { chatGroupType });
+
+    return <Pick<Chat, 'name' | 'telegramChatId'> | undefined>oldAdminChat;
   }
 }

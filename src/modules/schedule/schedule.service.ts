@@ -43,16 +43,16 @@ export class ScheduleService {
 
     let qb = this.chatScheduleRepository
       .createQueryBuilder('cs')
-      .select(['distinct c.id as "chatId"', 's.id as "scheduleId"', 'cs.id as "userScheduleId"'])
+      .select(['distinct c.id as "chatId"', 's.id as "scheduleId"', 'cs.id as "chatScheduleId"'])
       .innerJoin('chat', 'c', 'c.id = cs.chat_id')
       .innerJoin('schedule', 's', 's.id = cs.schedule_id')
       .where('s.hour = :hour', { hour })
-      .andWhere('u.moodle_username is not null')
-      .andWhere('u.moodle_password is not null')
+      .andWhere('c.moodle_username is not null')
+      .andWhere('c.moodle_password is not null')
       // last cron has to be smaller than hour cron starts, to avoid duplicate cron jobs
       .andWhere('( cs.last_cron IS NULL OR cs.last_cron < :cronStart )', { cronStart }); // us.last_cron IS NULL OR
     // if verification is not disabled, filter verified users to schedule
-    if (!this.config.get('bot.auth.verificationDisabled')) qb = qb.andWhere('u.verified = true');
+    if (!this.config.get('bot.auth.verificationDisabled')) qb = qb.andWhere('c.verified = true');
 
     return qb.getRawMany<ScheduledChat>();
   }

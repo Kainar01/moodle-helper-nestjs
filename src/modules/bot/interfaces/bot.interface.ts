@@ -11,6 +11,8 @@ export enum BotCommand {
   NOTIFY_ASSIGNMENT = 'notifyassignment',
   REQUEST_VERIFY = 'requestverify',
   LEAVE_FEEDBACK = 'feedback',
+  REQUEST_ADMIN = 'requestadmin',
+  MAKE_ERROR_CHAT = 'makeerrorchat',
 }
 
 export enum BotAction {

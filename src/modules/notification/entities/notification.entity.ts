@@ -8,7 +8,7 @@ export class NotificationEntity implements AssignmentNotification {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id!: number;
 
-  @Column('int', { nullable: false, name: 'telegram_chat_id' })
+  @Column('bigint', { nullable: false, name: 'telegram_chat_id' })
   telegramChatId!: number;
 
   @Column('int', { nullable: false, name: 'assignment_id' })

@@ -7,7 +7,7 @@ export class FeedbackEntity implements Feedback {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id!: number;
 
-  @Column('int', { nullable: false, name: 'chat_id' })
+  @Column('bigint', { nullable: false, name: 'chat_id' })
   telegramChatId!: number;
 
   @Column('text', { nullable: false, name: 'message' })

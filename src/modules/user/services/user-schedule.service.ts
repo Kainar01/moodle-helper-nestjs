@@ -49,7 +49,7 @@ export class UserScheduleService {
       .andWhere('u.moodle_username is not null')
       .andWhere('u.moodle_password is not null')
       // last cron has to be smaller than hour cron starts, to avoid duplicate cron jobs
-      .andWhere('us.last_cron IS NULL OR us.last_cron < :cronStart', { cronStart }); // us.last_cron IS NULL OR
+      .andWhere('( us.last_cron IS NULL OR us.last_cron < :cronStart )', { cronStart }); // us.last_cron IS NULL OR
     // if verification is not disabled, filter verified users to schedule
     if (!this.config.get('bot.auth.verificationDisabled')) qb = qb.andWhere('u.verified = true');
 

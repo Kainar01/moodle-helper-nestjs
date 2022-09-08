@@ -5,10 +5,12 @@ import { ConfigService } from '@nestjs/config';
 import moment from 'moment-timezone';
 import { WebDriver, By } from 'selenium-webdriver';
 
+import { Logger } from '@/common';
+
 @Injectable()
 export class MoodleService {
   private url: string;
-  constructor(config: ConfigService) {
+  constructor(config: ConfigService, private logger: Logger) {
     this.url = <string>config.get('bot.moodle.url');
   }
 
@@ -98,7 +100,7 @@ export class MoodleService {
       // if not error, success
       return { error: null };
     } catch (err) {
-      console.error(err);
+      this.logger.error('Error login moodle ', err);
       return { error: (<Error>err).message };
     }
   }

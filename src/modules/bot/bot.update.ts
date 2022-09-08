@@ -4,6 +4,7 @@ import { Update, InjectBot, On, Start, Command, Ctx, Action } from 'nestjs-teleg
 import { Telegraf } from 'telegraf';
 import type { User as TelegramUser } from 'telegraf/typings/core/types/typegram';
 
+import { Logger } from '@/common';
 import { TelegrafExceptionFilter } from '@/common/filters';
 import { AssignmentService, AssignmentStatus } from '@/modules/assignment';
 
@@ -22,6 +23,7 @@ export class BotUpdate {
     private userService: UserService,
     private assignmentService: AssignmentService,
     @I18n() private i18n: I18nService,
+    private logger: Logger,
   ) {
     this.useUserMiddleware();
     this.handleError();
@@ -197,7 +199,7 @@ export class BotUpdate {
           ctx.user = user;
         }
       } catch (err) {
-        console.error(err);
+        this.logger.error(err);
       } finally {
         await next();
       }
@@ -211,7 +213,7 @@ export class BotUpdate {
   }
 
   private handleError(): void {
-    this.bot.catch((err: any) => console.error(err));
+    this.bot.catch((err: any) => this.logger.error(err));
   }
 
   private getMessage<T = string>(key: string, args?: Record<string, any>) {

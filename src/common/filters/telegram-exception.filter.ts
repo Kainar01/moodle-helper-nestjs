@@ -4,8 +4,11 @@ import { TelegrafArgumentsHost } from 'nestjs-telegraf';
 import type { BotContext } from '@/modules/bot';
 import { ValidationException } from '@/modules/bot/exceptions';
 
+import { Logger } from '../logger';
+
 @Catch()
 export class TelegrafExceptionFilter implements ExceptionFilter {
+  constructor(private logger: Logger) {}
   public async catch(exception: Error, host: ArgumentsHost): Promise<void> {
     const telegrafHost = TelegrafArgumentsHost.create(host);
     const ctx = telegrafHost.getContext<BotContext>();
@@ -13,7 +16,7 @@ export class TelegrafExceptionFilter implements ExceptionFilter {
       await ctx.reply(`${exception.message}`, { parse_mode: 'Markdown' });
     } else {
       await ctx.reply(`*Error*: ${exception.message}`, { parse_mode: 'Markdown' });
-      console.error(exception);
+      this.logger.error(exception);
     }
     await ctx.scene.leave();
   }

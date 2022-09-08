@@ -7,6 +7,7 @@ import { InjectBot } from 'nestjs-telegraf';
 import { Telegraf } from 'telegraf';
 import type { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 
+import { Logger } from '@/common';
 import { BotContext, MOODLE_BOT_ACTIONS, MOODLE_BOT_NAME, TELEGRAM_EMOJIES } from '@/modules/bot';
 import { UserScheduleService, UserService } from '@/modules/user';
 
@@ -23,6 +24,7 @@ export class ShowAssignmentsConsumer {
     private scheduleService: UserScheduleService,
     @InjectBot(MOODLE_BOT_NAME)
     private readonly bot: Telegraf<BotContext>,
+    private logger: Logger,
   ) {}
 
   @Process()
@@ -80,7 +82,7 @@ export class ShowAssignmentsConsumer {
 
   @OnQueueFailed()
   public onJobFailed(job: Job<ShowAssignmentJobData>, error: Error) {
-    console.error(`Get assignment job ${job.id} failed data =`, JSON.stringify(job.data), error);
+    this.logger.error(`Get assignment job ${job.id} failed data = ${JSON.stringify(job.data)}`, error);
   }
 
   private async sendMessage(chatId: string, message: string, extra?: ExtraReplyMessage) {

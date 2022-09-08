@@ -149,7 +149,7 @@ export class BotUpdate {
 
     const message = this.getMessage('request-verify.request-accepted');
 
-    await ctx.telegram.sendMessage(requestUser.chatId, `${message}, ${TELEGRAM_EMOJIES.HALO}`);
+    await ctx.telegram.sendMessage(requestUser.chatId, `${message} ${TELEGRAM_EMOJIES.HALO}`);
   }
 
   @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE}\\d`))

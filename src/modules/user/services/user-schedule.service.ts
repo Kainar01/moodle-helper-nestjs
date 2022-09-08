@@ -42,7 +42,7 @@ export class UserScheduleService {
 
     let qb = this.userScheduleRepository
       .createQueryBuilder('us')
-      .select(['distinct u.id as "userId"', 's.id as "scheduleId"'])
+      .select(['distinct u.id as "userId"', 's.id as "scheduleId"', 'us.id as "userScheduleId"'])
       .innerJoin('user', 'u', 'u.id = us.user_id')
       .innerJoin('schedule', 's', 's.id = us.schedule_id')
       .where('s.hour = :hour', { hour })
@@ -56,14 +56,14 @@ export class UserScheduleService {
     return qb.getRawMany<ScheduledUser>();
   }
 
-  public async updateLastCron(userIds: number[], newCron: UserSchedule['lastCron'], transactionManager?: EntityManager) {
+  public async updateLastCron(id: number[], newCron: UserSchedule['lastCron'], transactionManager?: EntityManager) {
     let qb;
     if (transactionManager) {
       qb = transactionManager.createQueryBuilder(UserScheduleEntity, 'us');
     } else {
       qb = this.userScheduleRepository.createQueryBuilder();
     }
-    await qb.update().set({ lastCron: newCron }).where('user_id IN (:...userIds)', { userIds }).execute();
+    await qb.update().set({ lastCron: newCron }).where('id IN (:...id)', { id }).execute();
   }
 
   public async updateUserSchedule(userId: number, hours: number[]) {

@@ -31,15 +31,12 @@ export class ScheduleAssignmentCron {
       // update cron last time to avoid recreating cron for same user
       const cronScheduledTime = moment().toDate();
 
-      const users = scheduledUsers.map(({ userId }: ScheduledUser) => userId);
+      const userScheduleIds = scheduledUsers.map(({ userScheduleId }: ScheduledUser) => userScheduleId);
 
-      await this.userScheduleService.updateLastCron(users, cronScheduledTime, transactionEntityManager);
+      await this.userScheduleService.updateLastCron(userScheduleIds, cronScheduledTime, transactionEntityManager);
 
       await scheduledUsers.reduce(async (prevPromise: Promise<void>, scheduledUser: ScheduledUser) => {
         await prevPromise;
-        await new Promise((resolve: (number: number)=>void) => {
-          setTimeout(resolve, 2000);
-        });
         await this.showAssignmentQueue.add(scheduledUser);
       }, Promise.resolve());
     });

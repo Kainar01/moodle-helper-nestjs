@@ -8,7 +8,7 @@ import { Telegraf } from 'telegraf';
 import type { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 
 import { BotContext, MOODLE_BOT_ACTIONS, MOODLE_BOT_NAME, TELEGRAM_EMOJIES } from '@/modules/bot';
-import { UserService } from '@/modules/user';
+import { UserScheduleService, UserService } from '@/modules/user';
 
 import { ASSIGNMENT_QUEUES } from '../assignment.constants';
 import type { AssignmentFormatted, ShowAssignmentJobData } from '../interfaces';
@@ -20,6 +20,7 @@ export class ShowAssignmentsConsumer {
     @I18n() private i18n: I18nService,
     private userService: UserService,
     private assignmentService: AssignmentService,
+    private scheduleService: UserScheduleService,
     @InjectBot(MOODLE_BOT_NAME)
     private readonly bot: Telegraf<BotContext>,
   ) {}
@@ -56,10 +57,23 @@ export class ShowAssignmentsConsumer {
 
   @OnQueueActive()
   public async onActive(job: Job<ShowAssignmentJobData>) {
-    const user = await this.userService.findByUserId(job.data.userId);
-    if (user) {
+    const { scheduleId, userId } = job.data;
+    const user = await this.userService.findByUserId(userId);
+
+    if (!user) return;
+
+    if (scheduleId) {
+      const schedule = await this.scheduleService.getScheduleById(scheduleId);
+
+      if (!schedule) {
+        throw new Error(`Не валидное время уведомление ${scheduleId}`);
+      }
+
+      const message = this.i18n.translate<string>('assignments.job.processing-with-schedule', { args: { schedule: schedule.label } });
+      await this.sendMessage(user.chatId, `${message} ${TELEGRAM_EMOJIES.PLEASED}`, { parse_mode: 'Markdown' });
+    } else {
       const message = this.i18n.translate<string>('assignments.job.processing');
-      await this.sendMessage(user.chatId, `${message} ${TELEGRAM_EMOJIES.PLEASED}`);
+      await this.sendMessage(user.chatId, `${message} ${TELEGRAM_EMOJIES.PLEASED}`, { parse_mode: 'Markdown' });
     }
   }
 

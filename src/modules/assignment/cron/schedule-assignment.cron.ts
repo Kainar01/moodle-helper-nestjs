@@ -7,7 +7,7 @@ import { isEmpty } from 'lodash';
 import moment from 'moment-timezone';
 import type { EntityManager, Repository } from 'typeorm';
 
-import { ScheduleHour, UserScheduleEntity, UserScheduleService } from '@/modules/user';
+import { ScheduledUser, ScheduleHour, UserScheduleEntity, UserScheduleService } from '@/modules/user';
 
 import { ASSIGNMENT_QUEUES } from '../assignment.constants';
 import type { ShowAssignmentJobData } from '../interfaces';
@@ -23,19 +23,25 @@ export class ScheduleAssignmentCron {
   @Cron(CronExpression.EVERY_5_MINUTES)
   public async scheduleShowAssignmentJobs() {
     const currentTimeHour = moment().hour();
-    const users = await this.userScheduleService.getScheduledUsers(<ScheduleHour>currentTimeHour);
+    const scheduledUsers = await this.userScheduleService.getScheduledUsers(<ScheduleHour>currentTimeHour);
 
-    if (isEmpty(users)) return;
+    if (isEmpty(scheduledUsers)) return;
 
     await this.userScheduleRepository.manager.transaction(async (transactionEntityManager: EntityManager) => {
       // update cron last time to avoid recreating cron for same user
       const cronScheduledTime = moment().toDate();
+
+      const users = scheduledUsers.map(({ userId }: ScheduledUser) => userId);
+
       await this.userScheduleService.updateLastCron(users, cronScheduledTime, transactionEntityManager);
 
-      await users.reduce(async (prevPromise: Promise<number>, userId: number) => {
+      await scheduledUsers.reduce(async (prevPromise: Promise<void>, scheduledUser: ScheduledUser) => {
         await prevPromise;
-        return this.showAssignmentQueue.add({ userId }).then(() => userId);
-      }, Promise.resolve(0));
+        await new Promise((resolve: (number: number)=>void) => {
+          setTimeout(resolve, 2000);
+        });
+        await this.showAssignmentQueue.add(scheduledUser);
+      }, Promise.resolve());
     });
   }
 }

@@ -5,7 +5,7 @@ import moment from 'moment-timezone';
 import type { EntityManager, Repository } from 'typeorm';
 
 import { ScheduleEntity, UserScheduleEntity } from '../entities';
-import type { Schedule, ScheduleHour, UserSchedule } from '../interfaces';
+import type { Schedule, ScheduledUser, ScheduleHour, UserSchedule } from '../interfaces';
 
 @Injectable()
 export class UserScheduleService {
@@ -36,13 +36,13 @@ export class UserScheduleService {
     return this.scheduleRepository.createQueryBuilder('s').select('s.*').where('s.id IN (:...ids)', { ids }).getRawMany<Schedule>();
   }
 
-  public async getScheduledUsers(hour: ScheduleHour): Promise<number[]> {
+  public async getScheduledUsers(hour: ScheduleHour): Promise<ScheduledUser[]> {
     // hour when cron started
     const cronStart = moment().set({ hour, minute: 0, second: 0, milliseconds: 0 }).toDate();
 
     let qb = this.userScheduleRepository
       .createQueryBuilder('us')
-      .select(['distinct u.id as user_id'])
+      .select(['distinct u.id as "userId"', 's.id as "scheduleId"'])
       .innerJoin('user', 'u', 'u.id = us.user_id')
       .innerJoin('schedule', 's', 's.id = us.schedule_id')
       .where('s.hour = :hour', { hour })
@@ -53,9 +53,7 @@ export class UserScheduleService {
     // if verification is not disabled, filter verified users to schedule
     if (!this.config.get('bot.auth.verificationDisabled')) qb = qb.andWhere('u.verified = true');
 
-    return qb
-      .getRawMany<Record<'user_id', number>>()
-      .then((rows: Record<'user_id', number>[]) => rows.map((row: Record<'user_id', number>) => row.user_id));
+    return qb.getRawMany<ScheduledUser>();
   }
 
   public async updateLastCron(userIds: number[], newCron: UserSchedule['lastCron'], transactionManager?: EntityManager) {

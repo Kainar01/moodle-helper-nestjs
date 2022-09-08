@@ -39,3 +39,8 @@ export enum ScheduleHour {
   $22 = 22,
   $23 = 23,
 }
+
+export interface ScheduledUser {
+  userId: number;
+  scheduleId: number;
+}

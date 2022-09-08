@@ -2,13 +2,13 @@ import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AssignmentModule } from '../assignment';
-import { UserModule } from '../user';
-import { WebScraperModule } from '../webscraper';
-import { NOTIFICATION_QUEUES } from './constants';
-import { AssignmentNotificationConsumer } from './consumers';
-import { NotificationEntity } from './entities';
-import { NotificationService } from './services';
+import { AssignmentModule } from '../assignment/assignment.module';
+import { ChatModule } from '../chat/chat.module';
+import { WebScraperModule } from '../webscraper/webscraper.module';
+import { NOTIFICATION_QUEUES } from './constants/notificaiton.constants';
+import { AssignmentNotificationConsumer } from './consumers/assignment-notification.consumer';
+import { NotificationEntity } from './entities/notification.entity';
+import { NotificationService } from './services/notification.service';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { NotificationService } from './services';
     }),
     TypeOrmModule.forFeature([NotificationEntity]),
     WebScraperModule,
-    UserModule,
+    ChatModule,
     AssignmentModule,
   ],
   providers: [NotificationService, AssignmentNotificationConsumer],

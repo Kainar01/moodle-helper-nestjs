@@ -1,4 +1,4 @@
-import { Schedule, ScheduleHour } from '../../modules/user';
+import { type Schedule, ScheduleHour } from "../../modules/schedule/schedule.interface";
 
 interface ScheduleDto extends Omit<Schedule, 'id'> {}
 

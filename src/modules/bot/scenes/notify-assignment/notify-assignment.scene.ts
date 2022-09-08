@@ -5,13 +5,14 @@ import { I18n, I18nService } from 'nestjs-i18n';
 import { Action, Ctx, Next, Wizard, WizardStep } from 'nestjs-telegraf';
 import type { Scenes } from 'telegraf';
 
-import { TelegrafExceptionFilter } from '@/common/filters';
-import { Assignment, AssignmentFormatted, AssignmentService } from '@/modules/assignment';
-import { NotificationService } from '@/modules/notification';
-import type { User } from '@/modules/user';
+import { TelegrafExceptionFilter } from '@/common/filters/telegram-exception.filter';
+import type { AssignmentFormatted, Assignment } from '@/modules/assignment/interfaces/assignment.interface';
+import { AssignmentService } from '@/modules/assignment/services/assignment.service';
+import type { Chat } from '@/modules/chat/chat.interface';
+import { NotificationService } from '@/modules/notification/services/notification.service';
 
 import { MOODLE_BOT_SCENES, TELEGRAM_EMOJIES } from '../../bot.constants';
-import { CtxUser } from '../../decorators';
+import { CtxChat } from '../../decorators/chat.decorator';
 import { BaseScene } from '../base/base.scene';
 import { NOTIFY_ASSIGNMENT_SCENE_STEPS, NOTIFY_ASSIGNMENT_SCENE_ACTIONS } from './notify-assignment.constants';
 
@@ -31,12 +32,12 @@ export class NotifyAssignmentScene extends BaseScene {
   public async getAssignmentStep(
     @Ctx() ctx: Scenes.WizardContext,
       @Next() next: () => Promise<void>,
-      @CtxUser() user: User,
+      @CtxChat() chat: Chat,
   ): Promise<void> {
     const isAssignedPassedWithParam = !!this.getAssignmentId(ctx);
 
     if (!isAssignedPassedWithParam) {
-      const assignments = await this.getAssignments(ctx, user);
+      const assignments = await this.getAssignments(ctx, chat);
 
       if (isEmpty(assignments)) {
         const message = this.getMessage('assignments.no-assignments');
@@ -140,7 +141,7 @@ export class NotifyAssignmentScene extends BaseScene {
   }
 
   @Action(new RegExp(`${NOTIFY_ASSIGNMENT_SCENE_ACTIONS.NOTIFY_HOUR_CONFIRM}`))
-  public async notificationConfirmAction(@Ctx() ctx: Scenes.WizardContext, @CtxUser() user: User) {
+  public async notificationConfirmAction(@Ctx() ctx: Scenes.WizardContext, @CtxChat() chat: Chat) {
     const callbackMessage = this.getCallbackMessage(ctx);
     const notificationHour = this.getStateNotification(ctx);
 
@@ -148,7 +149,7 @@ export class NotifyAssignmentScene extends BaseScene {
     await ctx.editMessageText(`${callbackMessage} ${TELEGRAM_EMOJIES.CHECK_MARK}`, { parse_mode: 'Markdown' });
 
     const { scheduledAt } = await this.notificationService.scheduleAssignmentNotificationJob(
-      { chatId: user.chatId, assignmentId: this.getAssignmentId(ctx) },
+      { telegramChatId: chat.telegramChatId, assignmentId: this.getAssignmentId(ctx) },
       notificationHour,
     );
 
@@ -215,15 +216,15 @@ export class NotifyAssignmentScene extends BaseScene {
     this.setState(ctx, this.ASSIGNMENT_LIST_KEY, assignments);
   }
 
-  private async getAssignments(ctx: Scenes.WizardContext, user: User): Promise<AssignmentFormatted[]> {
+  private async getAssignments(ctx: Scenes.WizardContext, chat: Chat): Promise<AssignmentFormatted[]> {
     const localAssignments = <AssignmentFormatted[]> this.getState(ctx)[this.ASSIGNMENT_LIST_KEY];
 
     if (localAssignments) return localAssignments;
 
-    let assignments = await this.assignmentService.getAssignmentsByUserId(user.id);
+    let assignments = await this.assignmentService.getAssignmentsByChatId(chat.id);
     if (isEmpty(assignments)) {
       // if no assignment found in the database
-      const { assignments: syncAssignments, error } = await this.assignmentService.getAssignments(user);
+      const { assignments: syncAssignments, error } = await this.assignmentService.getAssignments(chat);
 
       if (error) throw new Error(error);
 

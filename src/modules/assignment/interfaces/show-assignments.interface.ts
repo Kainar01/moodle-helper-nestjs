@@ -1,4 +1,4 @@
 export type ShowAssignmentJobData = {
-  userId: number;
+  chatId: number;
   scheduleId?: number;
 };

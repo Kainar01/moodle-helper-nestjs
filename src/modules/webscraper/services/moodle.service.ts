@@ -5,12 +5,12 @@ import { ConfigService } from '@nestjs/config';
 import moment from 'moment-timezone';
 import { WebDriver, By } from 'selenium-webdriver';
 
-import { Logger } from '@/common';
+import { ConsoleLogger } from '@/common/logger/console-logger';
 
 @Injectable()
 export class MoodleService {
   private url: string;
-  constructor(config: ConfigService, private logger: Logger) {
+  constructor(config: ConfigService, private logger: ConsoleLogger) {
     this.url = <string>config.get('bot.moodle.url');
   }
 

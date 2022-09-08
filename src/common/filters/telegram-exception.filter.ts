@@ -1,15 +1,15 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import { TelegrafArgumentsHost } from 'nestjs-telegraf';
 
-import type { BotContext } from '@/modules/bot';
-import { ValidationException } from '@/modules/bot/exceptions';
-import { UserService } from '@/modules/user';
+import { ValidationException } from '@/modules/bot/exceptions/validation.exception';
+import type { BotContext } from '@/modules/bot/interfaces/bot.interface';
+import { ChatService } from '@/modules/chat/chat.service';
 
-import { Logger } from '../logger';
+import { Logger } from '../logger/logger';
 
 @Catch()
 export class TelegrafExceptionFilter implements ExceptionFilter {
-  constructor(private logger: Logger, private userService: UserService) {}
+  constructor(private logger: Logger, private chatService: ChatService) {}
   public async catch(exception: Error, host: ArgumentsHost): Promise<void> {
     const telegrafHost = TelegrafArgumentsHost.create(host);
     const ctx = telegrafHost.getContext<BotContext>();
@@ -24,10 +24,10 @@ export class TelegrafExceptionFilter implements ExceptionFilter {
   }
 
   private async sendExceptionToAdmin(ctx: BotContext, exception: Error) {
-    const admin = await this.userService.findSuperAdmin();
-    if (admin) {
+    const errorChat = await this.chatService.findErrorChat();
+    if (errorChat) {
       await ctx.telegram
-        .sendMessage(admin.chatId, `User: ${ctx.user.id}\n~${exception.stack}~`, { parse_mode: 'Markdown' })
+        .sendMessage(errorChat.telegramChatId, `Chat: ${ctx.botChat.id}\n~${exception.stack}~`, { parse_mode: 'Markdown' })
         .catch(this.logger.error.bind(this));
     }
   }

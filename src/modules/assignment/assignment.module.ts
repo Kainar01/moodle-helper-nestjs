@@ -2,22 +2,26 @@ import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm/dist/typeorm.module';
 
-import { UserModule, UserScheduleEntity } from '../user';
-import { WebScraperModule } from '../webscraper';
+import { ChatModule } from '../chat/chat.module';
+import { ChatScheduleEntity } from '../schedule/entities/chat-schedule.entity';
+import { ScheduleModule } from '../schedule/schedule.module';
+import { WebScraperModule } from '../webscraper/webscraper.module';
 import { ASSIGNMENT_QUEUES } from './assignment.constants';
-import { ShowAssignmentsConsumer } from './consumers';
-import { ScheduleAssignmentCron } from './cron';
-import { AssignmentEntity } from './entities';
-import { AssignmentService, MoodleAssignmentService } from './services';
+import { ShowAssignmentsConsumer } from './consumers/show-assignments.consumer';
+import { ScheduleAssignmentCron } from './cron/schedule-assignment.cron';
+import { AssignmentEntity } from './entities/assignment.entity';
+import { AssignmentService } from './services/assignment.service';
+import { MoodleAssignmentService } from './services/moodle-assignment.service';
 
 @Module({
   imports: [
     BullModule.registerQueue({
       name: ASSIGNMENT_QUEUES.SHOW_ASSIGNMENTS,
     }),
-    TypeOrmModule.forFeature([UserScheduleEntity, AssignmentEntity]),
+    TypeOrmModule.forFeature([ChatScheduleEntity, AssignmentEntity]),
     WebScraperModule,
-    UserModule,
+    ChatModule,
+    ScheduleModule,
   ],
   providers: [AssignmentService, MoodleAssignmentService, ShowAssignmentsConsumer, ScheduleAssignmentCron],
   exports: [AssignmentService, MoodleAssignmentService],

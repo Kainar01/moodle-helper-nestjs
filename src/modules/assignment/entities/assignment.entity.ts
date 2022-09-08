@@ -1,15 +1,15 @@
-import { UserEntity } from '../../../modules/user';
+import { ChatEntity } from '../../../modules/chat/chat.entity';
 import { Column, Entity, PrimaryGeneratedColumn, JoinColumn, ManyToOne, Unique } from 'typeorm';
-import { Assignment, AssignmentStatus, AssignmentType } from '../interfaces';
+import { type Assignment, AssignmentStatus, AssignmentType } from '../interfaces/assignment.interface';
 
 @Entity('assignment')
-@Unique(['userId', 'assignmentId'])
+@Unique(['chatId', 'assignmentId'])
 export class AssignmentEntity implements Assignment {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id!: number;
 
-  @Column('int', { nullable: false, name: 'user_id' })
-  userId!: number;
+  @Column('int', { nullable: false, name: 'chat_id' })
+  chatId!: number;
 
   @Column('int', { nullable: false, name: 'assignment_id' })
   assignmentId!: string;
@@ -32,10 +32,10 @@ export class AssignmentEntity implements Assignment {
   @Column({ type: 'timestamptz', nullable: false })
   deadline!: Date;
 
-  @ManyToOne(() => UserEntity, (user) => user.userSchedules, {
+  @ManyToOne(() => ChatEntity, (chat) => chat.assignments, {
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
   })
-  @JoinColumn({ name: 'user_id' })
-  public user!: UserEntity;
+  @JoinColumn({ name: 'chat_id' })
+  public chat!: ChatEntity;
 }

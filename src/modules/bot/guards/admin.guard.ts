@@ -1,10 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { TelegrafExecutionContext } from 'nestjs-telegraf';
 
-import { UserRole } from '@/modules/user';
+import { ChatGroupType } from '@/modules/chat/chat.interface';
 
-import { ValidationException } from '../exceptions';
-import type { BotContext } from '../interfaces';
+import { ValidationException } from '../exceptions/validation.exception';
+import type { BotContext } from '../interfaces/bot.interface';
 
 @Injectable()
 export class BotAdminGuard implements CanActivate {
@@ -12,7 +12,10 @@ export class BotAdminGuard implements CanActivate {
     const ctx = TelegrafExecutionContext.create(context);
     const botContext = ctx.getContext<BotContext>();
 
-    if (!botContext.user.role || ![UserRole.ADMIN, UserRole.SUPERADMIN].includes(botContext.user.role)) {
+    const adminGroupChats = [ChatGroupType.ADMIN, ChatGroupType.SUPERADMIN];
+    const isAdmin = botContext.botChat.chatGroupType && adminGroupChats.includes(botContext.botChat.chatGroupType);
+
+    if (!isAdmin) {
       throw new ValidationException('You are not allowed 😡');
     }
 

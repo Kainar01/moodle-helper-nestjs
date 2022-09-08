@@ -5,7 +5,7 @@ import moment from 'moment-timezone';
 
 import { middleware } from './app.middleware';
 import { AppModule } from './app.module';
-import { Logger } from './common';
+import { Logger } from './common/logger/logger';
 
 /**
  * https://docs.nestjs.com

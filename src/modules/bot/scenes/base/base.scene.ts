@@ -2,7 +2,7 @@ import { UseFilters } from '@nestjs/common';
 import { I18n, I18nService } from 'nestjs-i18n';
 import type { Scenes } from 'telegraf';
 
-import { TelegrafExceptionFilter } from '@/common/filters';
+import { TelegrafExceptionFilter } from '@/common/filters/telegram-exception.filter';
 
 @UseFilters(TelegrafExceptionFilter)
 export class BaseScene {

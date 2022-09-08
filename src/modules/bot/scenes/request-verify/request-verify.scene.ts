@@ -3,12 +3,13 @@ import _ from 'lodash';
 import { I18n, I18nService } from 'nestjs-i18n';
 import { Action, Ctx, Message, Next, Wizard, WizardStep } from 'nestjs-telegraf';
 import type { Scenes } from 'telegraf';
+import type { Chat } from 'telegraf/typings/core/types/typegram';
 
-import { TelegrafExceptionFilter } from '@/common/filters';
-import { User, UserService } from '@/modules/user';
+import { TelegrafExceptionFilter } from '@/common/filters/telegram-exception.filter';
+import { ChatService } from '@/modules/chat/chat.service';
 
 import { MOODLE_BOT_ACTIONS, MOODLE_BOT_SCENES, TELEGRAM_EMOJIES } from '../../bot.constants';
-import { CtxUser } from '../../decorators';
+import { CtxChat } from '../../decorators/chat.decorator';
 import { BaseScene } from '../base/base.scene';
 import { REQUEST_VERIFY_SCENE_STEPS, REQUEST_VERIFY_SCENE_ACTIONS } from './request-verify.constants';
 
@@ -17,7 +18,7 @@ import { REQUEST_VERIFY_SCENE_STEPS, REQUEST_VERIFY_SCENE_ACTIONS } from './requ
 export class RequestVerifyScene extends BaseScene {
   private NAME_KEY: string = 'name';
 
-  constructor(@I18n() i18n: I18nService, private userService: UserService) {
+  constructor(@I18n() i18n: I18nService, private chatService: ChatService) {
     super(i18n);
   }
 
@@ -70,7 +71,7 @@ export class RequestVerifyScene extends BaseScene {
   }
 
   @Action(new RegExp(`${REQUEST_VERIFY_SCENE_ACTIONS.REQUEST_CONFIRM}`))
-  public async rescheduleConfirmAction(@Ctx() ctx: Scenes.WizardContext, @CtxUser() user: User) {
+  public async rescheduleConfirmAction(@Ctx() ctx: Scenes.WizardContext, @CtxChat() chat: Chat) {
     const callbackMessage = this.getCallbackMessage(ctx);
 
     await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
@@ -78,13 +79,13 @@ export class RequestVerifyScene extends BaseScene {
 
     // TODO: send request to admin
 
-    const admin = await this.userService.findSuperAdmin();
+    const adminChat = await this.chatService.findAdminChat();
 
-    if (!admin) {
+    if (!adminChat) {
       throw new Error(this.getMessage('request-verify.no-admin'));
     }
 
-    await this.sendAdminRequest(ctx, admin.chatId, user);
+    await this.sendAdminRequest(ctx, adminChat.telegramChatId, chat);
 
     const message = this.getMessage('request-verify.saved');
     await ctx.reply(`${message} ${TELEGRAM_EMOJIES.RAISING_HANDS}`);
@@ -103,16 +104,16 @@ export class RequestVerifyScene extends BaseScene {
   }
 
   // TODO: move to verification module
-  private async sendAdminRequest(ctx: Scenes.WizardContext, adminChatId: string, user: User) {
-    const message = this.getMessage('request-verify.incoming-request', { name: this.getName(ctx), userId: user.telegramUserId });
+  private async sendAdminRequest(ctx: Scenes.WizardContext, adminChatId: number, chat: Chat) {
+    const message = this.getMessage('request-verify.incoming-request', { name: this.getName(ctx), userId: chat.id });
     await ctx.telegram.sendMessage(adminChatId, message, {
       parse_mode: 'Markdown',
       reply_markup: {
         remove_keyboard: true,
         one_time_keyboard: true,
         inline_keyboard: [
-          [{ text: `Активировать${TELEGRAM_EMOJIES.CHECK_MARK}`, callback_data: `${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_CONFIRM}${user.id}` }],
-          [{ text: `Отклонить${TELEGRAM_EMOJIES.CROSS_MARK}`, callback_data: `${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE}${user.id}` }],
+          [{ text: `Активировать${TELEGRAM_EMOJIES.CHECK_MARK}`, callback_data: `${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_CONFIRM}${chat.id}` }],
+          [{ text: `Отклонить${TELEGRAM_EMOJIES.CROSS_MARK}`, callback_data: `${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE}${chat.id}` }],
         ],
       },
     });

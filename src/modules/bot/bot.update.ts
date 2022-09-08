@@ -2,17 +2,22 @@ import { UseFilters, UseGuards } from '@nestjs/common';
 import { I18n, I18nService } from 'nestjs-i18n';
 import { Update, InjectBot, On, Start, Command, Ctx, Action } from 'nestjs-telegraf';
 import { Telegraf } from 'telegraf';
-import type { User as TelegramUser } from 'telegraf/typings/core/types/typegram';
+import type { Chat as TelegramCtxChat } from 'telegraf/typings/core/types/typegram';
 
-import { Logger } from '@/common';
-import { TelegrafExceptionFilter } from '@/common/filters';
-import { AssignmentService, AssignmentStatus } from '@/modules/assignment';
+import { TelegrafExceptionFilter } from '@/common/filters/telegram-exception.filter';
+import { Logger } from '@/common/logger/logger';
 
-import { User, UserService } from '../user';
+import { AssignmentStatus } from '../assignment/interfaces/assignment.interface';
+import { AssignmentService } from '../assignment/services/assignment.service';
+import { Chat, ChatType, type TelegramChat } from '../chat/chat.interface';
+import { ChatService } from '../chat/chat.service';
 import { MOODLE_BOT_ACTIONS, MOODLE_BOT_NAME, MOODLE_BOT_SCENES, TELEGRAM_EMOJIES } from './bot.constants';
-import { CtxUser } from './decorators';
-import { BotAdminGuard, BotMoodleAuthGuard, BotNotVerifiedGuard, BotVerifiedGuard } from './guards';
-import { BotCommand, BotContext } from './interfaces';
+import { CtxChat } from './decorators/chat.decorator';
+import { BotAdminGuard } from './guards/admin.guard';
+import { BotMoodleAuthGuard } from './guards/moodle-auth.guard';
+import { BotNotVerifiedGuard } from './guards/not-verified.guard';
+import { BotVerifiedGuard } from './guards/verified.guard';
+import { type BotContext, BotCommand } from './interfaces/bot.interface';
 
 @Update()
 @UseFilters(TelegrafExceptionFilter)
@@ -20,7 +25,7 @@ export class BotUpdate {
   constructor(
     @InjectBot(MOODLE_BOT_NAME)
     private readonly bot: Telegraf<BotContext>,
-    private userService: UserService,
+    private chatService: ChatService,
     private assignmentService: AssignmentService,
     @I18n() private i18n: I18nService,
     private logger: Logger,
@@ -31,8 +36,8 @@ export class BotUpdate {
 
   @UseGuards(BotVerifiedGuard)
   @Start()
-  public async onStart(@Ctx() ctx: BotContext, @CtxUser() user: User) {
-    if (!user.moodlePassword || !user.moodleUsername) {
+  public async onStart(@Ctx() ctx: BotContext, @CtxChat() chat: Chat) {
+    if (!chat.moodlePassword || !chat.moodleUsername) {
       const helloMessage = this.getMessage('bot.hello');
       await ctx.reply(`${helloMessage} ${TELEGRAM_EMOJIES.WINKING}`);
 
@@ -63,12 +68,12 @@ export class BotUpdate {
 
   @UseGuards(BotVerifiedGuard, BotMoodleAuthGuard)
   @Command(BotCommand.ASSIGNMENTS)
-  public async onAssignmentsCommand(@CtxUser() user: User): Promise<string | void> {
-    const { error } = this.assignmentService.validateUserLastNotification(user);
+  public async onAssignmentsCommand(@CtxChat() chat: Chat): Promise<string | void> {
+    const { error } = this.assignmentService.validateChatLastNotification(chat);
 
     if (error) return `${error} ${TELEGRAM_EMOJIES.FOLDED_HANDS}`;
 
-    await this.assignmentService.scheduleAssignmentNotification(user);
+    await this.assignmentService.scheduleAssignmentNotification(chat);
 
     const message = this.getMessage('assignments.job.scheduled');
     return `${message} ${TELEGRAM_EMOJIES.HALO}`;
@@ -92,7 +97,7 @@ export class BotUpdate {
     await ctx.scene.enter(MOODLE_BOT_SCENES.REQUEST_VERIFY);
   }
 
-  @UseGuards(BotNotVerifiedGuard)
+  @UseGuards(BotVerifiedGuard)
   @Command(BotCommand.LEAVE_FEEDBACK)
   public async onLeaveFeedbackCommand(@Ctx() ctx: BotContext): Promise<string | void> {
     await ctx.scene.enter(MOODLE_BOT_SCENES.FEEDBACK);
@@ -139,19 +144,19 @@ export class BotUpdate {
     await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
 
     const actionData = this.getCallbackData(ctx);
-    const requestUserId = Number(actionData.replace(MOODLE_BOT_ACTIONS.ADMIN_REQUEST_CONFIRM, ''));
+    const requestChatId = Number(actionData.replace(MOODLE_BOT_ACTIONS.ADMIN_REQUEST_CONFIRM, ''));
 
-    const requestUser = await this.userService.findByUserId(requestUserId);
+    const requestChat = await this.chatService.findChatById(requestChatId);
 
-    if (!requestUser) {
-      throw new Error(`Пользователь не существует requestUserId=${requestUserId}`);
+    if (!requestChat) {
+      throw new Error(`Пользователь не существует requestChatId=${requestChatId}`);
     }
 
-    await this.userService.updateUser(requestUser.id, { verified: true });
+    await this.chatService.updateChat(requestChat.id, { verified: true });
 
     const message = this.getMessage('request-verify.request-accepted');
 
-    await ctx.telegram.sendMessage(requestUser.chatId, `${message} ${TELEGRAM_EMOJIES.HALO}`);
+    await ctx.telegram.sendMessage(requestChat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.HALO}`);
   }
 
   @Action(new RegExp(`${MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE}\\d`))
@@ -159,17 +164,17 @@ export class BotUpdate {
     await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
 
     const actionData = this.getCallbackData(ctx);
-    const requestUserId = Number(actionData.replace(MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE, ''));
+    const requestChatId = Number(actionData.replace(MOODLE_BOT_ACTIONS.ADMIN_REQUEST_DECLINE, ''));
 
-    const requestUser = await this.userService.findByUserId(requestUserId);
+    const requestChat = await this.chatService.findChatById(requestChatId);
 
-    if (!requestUser) {
-      throw new Error(`Пользователь не существует requestUserId=${requestUserId}`);
+    if (!requestChat) {
+      throw new Error(`Пользователь не существует requestChatId=${requestChatId}`);
     }
 
     const message = this.getMessage('request-verify.request-declined');
 
-    await ctx.telegram.sendMessage(requestUser.chatId, `${message} ${TELEGRAM_EMOJIES.CONFUSED}`);
+    await ctx.telegram.sendMessage(requestChat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.CONFUSED}`);
   }
 
   @On('text')
@@ -179,24 +184,28 @@ export class BotUpdate {
   }
 
   private useUserMiddleware(): void {
-    const userMiddleware = async (ctx: BotContext, next: () => Promise<void>): Promise<void> => {
+    const chatMiddleware = async (ctx: BotContext, next: () => Promise<void>): Promise<void> => {
       try {
-        const chatId = ctx?.chat?.id;
-        if (chatId) {
-          const { first_name: name, username, id } = this.getTelegramUser(ctx);
+        const telegramChat = this.getTelegramChat(ctx);
+        if (telegramChat) {
+          const { type, id: telegramChatId, name } = telegramChat;
 
-          let user = await this.userService.findByChatId(chatId.toString());
+          let chat = await this.chatService.findChatByTelegramId(telegramChatId);
 
-          if (!user) {
-            user = await this.userService.createUser({ chatId: chatId.toString(), name, username, telegramUserId: id });
+          if (!chat) {
+            chat = await this.chatService.createChat({
+              type: type === 'private' ? ChatType.PRIVATE : ChatType.GROUP,
+              telegramChatId,
+              chatGroupType: null,
+              name,
+            });
           } else {
-            const nameChanged = name !== user.name;
-            const usernameChanged = username !== user.username;
-            if (nameChanged || usernameChanged) {
-              await this.userService.updateUser(user.id, { name, username });
+            const nameChanged = name !== chat.name;
+            if (nameChanged) {
+              await this.chatService.updateChat(chat.id, { name });
             }
           }
-          ctx.user = user;
+          ctx.botChat = chat;
         }
       } catch (err) {
         this.logger.error(err);
@@ -205,11 +214,33 @@ export class BotUpdate {
       }
     };
 
-    this.bot.use(userMiddleware);
+    // this.bot.use(userMiddleware);
+    this.bot.use(chatMiddleware);
   }
 
-  private getTelegramUser(ctx: BotContext): TelegramUser {
-    return <TelegramUser>(ctx.message?.from || ctx.callbackQuery?.from || ctx.from);
+  private getTelegramChat(ctx: BotContext): TelegramChat | null {
+    if (!ctx.chat) return null;
+
+    const { chat } = ctx;
+
+    const isPrivateChat = chat.type === 'private';
+
+    if (isPrivateChat) {
+      const telegramUserChat = <TelegramCtxChat.PrivateChat>ctx.chat;
+
+      return {
+        id: telegramUserChat.id,
+        name: telegramUserChat.first_name,
+        type: ChatType.PRIVATE,
+      };
+    }
+    const telegramGroupChat = <TelegramCtxChat.GroupChat>ctx.chat;
+
+    return {
+      id: telegramGroupChat.id,
+      name: telegramGroupChat.title,
+      type: ChatType.GROUP,
+    };
   }
 
   private handleError(): void {

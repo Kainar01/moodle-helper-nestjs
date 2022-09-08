@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { DriverService, MoodleService } from './services';
+import { DriverService } from './services/driver.service';
+import { MoodleService } from './services/moodle.service';
 
 @Module({
   imports: [

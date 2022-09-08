@@ -3,12 +3,14 @@ import _ from 'lodash';
 import { I18n, I18nService } from 'nestjs-i18n';
 import { Action, Ctx, Next, Wizard, WizardStep } from 'nestjs-telegraf';
 import type { Scenes } from 'telegraf';
+import type { Chat } from 'telegraf/typings/core/types/typegram';
 
-import { TelegrafExceptionFilter } from '@/common/filters';
-import { User, UserScheduleService, Schedule } from '@/modules/user';
+import { TelegrafExceptionFilter } from '@/common/filters/telegram-exception.filter';
+import type { Schedule } from '@/modules/schedule/schedule.interface';
+import { ScheduleService } from '@/modules/schedule/schedule.service';
 
 import { MOODLE_BOT_SCENES, TELEGRAM_EMOJIES } from '../../bot.constants';
-import { CtxUser } from '../../decorators';
+import { CtxChat } from '../../decorators/chat.decorator';
 import { BaseScene } from '../base/base.scene';
 import { BOT_SCHEDULE_ACTIONS, SCHEDULE_STEPS } from './schedule.constants';
 
@@ -19,16 +21,16 @@ export class ScheduleScene extends BaseScene {
   private SCHEDULES_KEY: string = 'schedules';
   private CURRENT_SCHEDULE_KEY: string = 'currentSchedule';
 
-  constructor(private userScheduleService: UserScheduleService, @I18n() i18n: I18nService) {
+  constructor(private scheduleService: ScheduleService, @I18n() i18n: I18nService) {
     super(i18n);
   }
 
   @WizardStep(SCHEDULE_STEPS.SHOW_CURRENT_SCHEDULE)
-  public async showSchedule(@Ctx() ctx: Scenes.WizardContext, @CtxUser() user: User): Promise<void> {
+  public async showSchedule(@Ctx() ctx: Scenes.WizardContext, @CtxChat() chat: Chat): Promise<void> {
     // SET DEFAULT STATE
     this.setDefaultState(ctx);
 
-    const schedules = await this.userScheduleService.getSchedulesByUserId(user.id);
+    const schedules = await this.scheduleService.getSchedulesByChatId(chat.id);
     const formattedSchedules = schedules.map(({ label }: Schedule) => label).join(', ');
 
     const message = this.getMessage('schedule.show-schedule', { schedules: formattedSchedules });
@@ -66,7 +68,7 @@ export class ScheduleScene extends BaseScene {
       return;
     }
 
-    const schedules = await this.userScheduleService.getSchedulesByIds(stateSchedules);
+    const schedules = await this.scheduleService.getSchedulesByIds(stateSchedules);
     const formattedSchedules = schedules.map(({ label }: Schedule) => label).join(', ');
 
     const message = this.getMessage('schedule.save-schedule', { schedules: formattedSchedules });
@@ -98,13 +100,13 @@ export class ScheduleScene extends BaseScene {
   }
 
   @Action(new RegExp(`${BOT_SCHEDULE_ACTIONS.RESCHEDULE_CONFIRM}`))
-  public async rescheduleConfirmAction(@Ctx() ctx: Scenes.WizardContext, @CtxUser() user: User) {
+  public async rescheduleConfirmAction(@Ctx() ctx: Scenes.WizardContext, @CtxChat() chat: Chat) {
     const callbackMessage = this.getCallbackMessage(ctx);
 
     await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
     await ctx.editMessageText(`${callbackMessage} ${TELEGRAM_EMOJIES.CHECK_MARK}`, { parse_mode: 'Markdown' });
 
-    await this.userScheduleService.updateUserScheduleById(user.id, <number[]> this.getState(ctx).schedules);
+    await this.scheduleService.updateChatSchedule(chat.id, <number[]> this.getState(ctx).schedules);
 
     const message = this.getMessage('schedule.saved-schedule');
     await ctx.reply(`${message} ${TELEGRAM_EMOJIES.RAISING_HANDS}`);
@@ -118,7 +120,7 @@ export class ScheduleScene extends BaseScene {
     const callbackData = this.getCallbackData(ctx);
     // remove action prefix to get id as string
     const pickedScheduleId = Number(callbackData.replace(BOT_SCHEDULE_ACTIONS.RESCHEDULE_PICK, ''));
-    const pickedSchedule = await this.userScheduleService.getScheduleById(pickedScheduleId);
+    const pickedSchedule = await this.scheduleService.getScheduleById(pickedScheduleId);
 
     if (!pickedSchedule) {
       const message = this.getMessage('schedule.invalid-schedule');
@@ -151,7 +153,7 @@ export class ScheduleScene extends BaseScene {
   }
 
   private async sendAvailableSchedules(ctx: Scenes.WizardContext) {
-    const schedules = await this.userScheduleService.getAvailableSchedules();
+    const schedules = await this.scheduleService.getAvailableSchedules();
 
     const stateSchedules = this.getStateSchedules(ctx);
     const scheduleIndex = stateSchedules.length + 1;

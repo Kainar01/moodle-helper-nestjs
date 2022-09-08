@@ -1,6 +1,6 @@
 import { Scenes } from 'telegraf';
 
-import type { AppEnvVars } from '@/config';
+import type { AppEnvVars } from '@/config/config.interface';
 
 export declare global {
   type AnyObject = Record<string, unknown>;

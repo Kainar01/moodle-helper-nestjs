@@ -1,5 +1,5 @@
 import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import type { Course } from '../interfaces';
+import type { Course } from '../interfaces/course.interface';
 
 @Entity('course')
 export class CourseEntity implements Course {

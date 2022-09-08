@@ -22,13 +22,13 @@ export class FeedbackService {
   public async saveFeedback(data: CreateFeedbackDto) {
     const feedback = this.feedbackRepository.create(data);
 
-    await this.validateFeedback(data.chatId);
+    await this.validateFeedback(data.telegramChatId);
 
     return this.feedbackRepository.save(feedback);
   }
 
-  public async validateFeedback(chatId: string): Promise<boolean> {
-    const lastFeedback = await this.feedbackRepository.findOne({ where: { chatId }, order: { createdAt: 'DESC' } });
+  public async validateFeedback(telegramChatId: number): Promise<boolean> {
+    const lastFeedback = await this.feedbackRepository.findOne({ where: { telegramChatId }, order: { createdAt: 'DESC' } });
 
     if (!lastFeedback) return true;
 

@@ -3,7 +3,7 @@
 import * as dotenv from 'dotenv';
 import { DataSource, DataSourceOptions, InstanceChecker } from 'typeorm';
 import path from 'path';
-import { configuration } from '../config';
+import { configuration } from '../config/configuration';
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 

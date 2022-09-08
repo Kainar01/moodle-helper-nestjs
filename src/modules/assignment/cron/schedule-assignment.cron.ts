@@ -7,37 +7,39 @@ import { isEmpty } from 'lodash';
 import moment from 'moment-timezone';
 import type { EntityManager, Repository } from 'typeorm';
 
-import { ScheduledUser, ScheduleHour, UserScheduleEntity, UserScheduleService } from '@/modules/user';
+import { ChatScheduleEntity } from '@/modules/schedule/entities/chat-schedule.entity';
+import type { ScheduleHour, ScheduledChat } from '@/modules/schedule/schedule.interface';
+import { ScheduleService } from '@/modules/schedule/schedule.service';
 
 import { ASSIGNMENT_QUEUES } from '../assignment.constants';
-import type { ShowAssignmentJobData } from '../interfaces';
+import type { ShowAssignmentJobData } from '../interfaces/show-assignments.interface';
 
 @Injectable()
 export class ScheduleAssignmentCron {
   constructor(
-    private userScheduleService: UserScheduleService,
+    private scheduleService: ScheduleService,
     @InjectQueue(ASSIGNMENT_QUEUES.SHOW_ASSIGNMENTS) private showAssignmentQueue: Queue<ShowAssignmentJobData>,
-    @InjectRepository(UserScheduleEntity) private userScheduleRepository: Repository<UserScheduleEntity>,
+    @InjectRepository(ChatScheduleEntity) private chatScheduleRepository: Repository<ChatScheduleEntity>,
   ) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   public async scheduleShowAssignmentJobs() {
     const currentTimeHour = moment().hour();
-    const scheduledUsers = await this.userScheduleService.getScheduledUsers(<ScheduleHour>currentTimeHour);
+    const scheduledChats = await this.scheduleService.getScheduledChats(<ScheduleHour>currentTimeHour);
 
-    if (isEmpty(scheduledUsers)) return;
+    if (isEmpty(scheduledChats)) return;
 
-    await this.userScheduleRepository.manager.transaction(async (transactionEntityManager: EntityManager) => {
+    await this.chatScheduleRepository.manager.transaction(async (transactionEntityManager: EntityManager) => {
       // update cron last time to avoid recreating cron for same user
       const cronScheduledTime = moment().toDate();
 
-      const userScheduleIds = scheduledUsers.map(({ userScheduleId }: ScheduledUser) => userScheduleId);
+      const chatScheduleIds = scheduledChats.map(({ chatScheduleId }: ScheduledChat) => chatScheduleId);
 
-      await this.userScheduleService.updateLastCron(userScheduleIds, cronScheduledTime, transactionEntityManager);
+      await this.scheduleService.updateLastCron(chatScheduleIds, cronScheduledTime, transactionEntityManager);
 
-      await scheduledUsers.reduce(async (prevPromise: Promise<void>, scheduledUser: ScheduledUser) => {
+      await scheduledChats.reduce(async (prevPromise: Promise<void>, scheduledChat: ScheduledChat) => {
         await prevPromise;
-        await this.showAssignmentQueue.add(scheduledUser);
+        await this.showAssignmentQueue.add(scheduledChat);
       }, Promise.resolve());
     });
   }

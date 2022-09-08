@@ -27,7 +27,7 @@ export class TelegrafExceptionFilter implements ExceptionFilter {
     const admin = await this.userService.findSuperAdmin();
     if (admin) {
       await ctx.telegram
-        .sendMessage(admin.chatId, `User: ${ctx.user.id}\n${exception.stack}`)
+        .sendMessage(admin.chatId, `User: ${ctx.user.id}\n~${exception.stack}~`, { parse_mode: 'Markdown' })
         .catch(this.logger.error.bind(this));
     }
   }

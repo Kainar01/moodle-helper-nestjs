@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import moment from 'moment-timezone';
 import type { EntityManager, Repository } from 'typeorm';
 
+import { ChatGroupType } from '../chat/chat.interface';
 import { ChatScheduleEntity } from './entities/chat-schedule.entity';
 import { ScheduleEntity } from './entities/schedule.entity';
 import type { Schedule, ScheduledChat, ScheduleHour, ChatSchedule } from './schedule.interface';
@@ -52,7 +53,12 @@ export class ScheduleService {
       // last cron has to be smaller than hour cron starts, to avoid duplicate cron jobs
       .andWhere('( cs.last_cron IS NULL OR cs.last_cron < :cronStart )', { cronStart }); // us.last_cron IS NULL OR
     // if verification is not disabled, filter verified users to schedule
-    if (!this.config.get('bot.auth.verificationDisabled')) qb = qb.andWhere('c.verified = true');
+    if (!this.config.get('bot.auth.verificationDisabled')) {
+      qb = qb.andWhere('( c.verified = true OR c.chat_group_type = :adminType OR c.chat_group_type = :superadminType )', {
+        adminType: ChatGroupType.ADMIN,
+        superadminType: ChatGroupType.SUPERADMIN,
+      });
+    }
 
     return qb.getRawMany<ScheduledChat>();
   }

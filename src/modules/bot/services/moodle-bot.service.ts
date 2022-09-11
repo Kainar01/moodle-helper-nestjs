@@ -4,7 +4,7 @@ import { Telegraf } from 'telegraf';
 import type { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 
 import { MOODLE_BOT_NAME } from '../bot.constants';
-import type { BotContext } from '../interfaces';
+import type { BotContext } from '../interfaces/bot.interface';
 
 @Injectable()
 export class MoodleBotService {

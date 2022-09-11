@@ -4,12 +4,16 @@ import { Action, Ctx, Message, Next, Wizard, WizardStep } from 'nestjs-telegraf'
 import type { WebDriver } from 'selenium-webdriver';
 import type { Scenes } from 'telegraf';
 
-import { TelegrafExceptionFilter } from '@/common/filters';
-import { Schedule, User, UserScheduleService, UserService } from '@/modules/user';
-import { DriverService, MoodleService } from '@/modules/webscraper/services';
+import { TelegrafExceptionFilter } from '@/common/filters/telegram-exception.filter';
+import type { Chat } from '@/modules/chat/chat.interface';
+import { ChatService } from '@/modules/chat/chat.service';
+import type { Schedule } from '@/modules/schedule/schedule.interface';
+import { ScheduleService } from '@/modules/schedule/schedule.service';
+import { DriverService } from '@/modules/webscraper/services/driver.service';
+import { MoodleService } from '@/modules/webscraper/services/moodle.service';
 
 import { MOODLE_BOT_SCENES, TELEGRAM_EMOJIES } from '../../bot.constants';
-import { CtxUser } from '../../decorators';
+import { CtxChat } from '../../decorators/chat.decorator';
 import { BaseScene } from '../base/base.scene';
 import { INIT_STEPS } from './init.constants';
 import { BotInitActions } from './init.interface';
@@ -18,18 +22,18 @@ import { BotInitActions } from './init.interface';
 @UseFilters(TelegrafExceptionFilter)
 export class InitScene extends BaseScene {
   constructor(
-    private userService: UserService,
-    @I18n()i18n: I18nService,
+    private chatService: ChatService,
+    @I18n() i18n: I18nService,
     private driverService: DriverService,
     private moodle: MoodleService,
-    private userScheduleService: UserScheduleService,
+    private scheduleService: ScheduleService,
   ) {
     super(i18n);
   }
 
   @WizardStep(INIT_STEPS.USERNAME)
-  public async enterUsername(@Ctx() ctx: Scenes.WizardContext, @CtxUser() user: User): Promise<void> {
-    const username = this.getState(ctx).username || user.moodleUsername;
+  public async enterUsername(@Ctx() ctx: Scenes.WizardContext, @CtxChat() chat: Chat): Promise<void> {
+    const username = this.getState(ctx).username || chat.moodleUsername;
     if (username) {
       const message = this.getMessage('authentication.set-up-username.change-existing', { username });
 
@@ -70,8 +74,8 @@ export class InitScene extends BaseScene {
   }
 
   @WizardStep(INIT_STEPS.PASSWORD)
-  public async enterPassword(@Ctx() ctx: Scenes.WizardContext, @CtxUser() user: User): Promise<void> {
-    const password = this.getState(ctx).password || user.moodlePassword;
+  public async enterPassword(@Ctx() ctx: Scenes.WizardContext, @CtxChat() chat: Chat): Promise<void> {
+    const password = this.getState(ctx).password || chat.moodlePassword;
     if (password) {
       const message = this.getMessage('authentication.set-up-password.change-existing', { password });
 
@@ -113,8 +117,8 @@ export class InitScene extends BaseScene {
   }
 
   @WizardStep(INIT_STEPS.CONFIRM)
-  public async confirm(@Ctx() ctx: Scenes.WizardContext, @CtxUser() user: User): Promise<void> {
-    const credentialsMsg = this.getMessage('authentication.save-credentials.save-new-credentials', this.getCredentials(ctx, user));
+  public async confirm(@Ctx() ctx: Scenes.WizardContext, @CtxChat() chat: Chat): Promise<void> {
+    const credentialsMsg = this.getMessage('authentication.save-credentials.save-new-credentials', this.getCredentials(ctx, chat));
 
     await ctx.reply(credentialsMsg, {
       parse_mode: 'Markdown',
@@ -179,9 +183,9 @@ export class InitScene extends BaseScene {
   }
 
   @Action(new RegExp(`${BotInitActions.DATA_CONFIRM}`))
-  public async handleDataConfirm(@Ctx() ctx: Scenes.WizardContext, @Next() next: () => Promise<void>, @CtxUser() user: User) {
+  public async handleDataConfirm(@Ctx() ctx: Scenes.WizardContext, @Next() next: () => Promise<void>, @CtxChat() chat: Chat) {
     // get users schedules
-    const schedules = await this.userScheduleService.getSchedulesByUserId(user.id);
+    const schedules = await this.scheduleService.getSchedulesByChatId(chat.id);
     const formattedSchedules = schedules.map(({ label }: Schedule) => label).join(', ');
 
     const callbackMessage = this.getCallbackMessage(ctx);
@@ -191,12 +195,12 @@ export class InitScene extends BaseScene {
     await ctx.editMessageText(`${callbackMessage} ${TELEGRAM_EMOJIES.CHECK_MARK}`, { parse_mode: 'Markdown' });
     await ctx.reply(`${credsMsg['save-in-progress']} ${TELEGRAM_EMOJIES.FOLDED_HANDS}`);
 
-    const { username, password } = this.getCredentials(ctx, user);
+    const { username, password } = this.getCredentials(ctx, chat);
 
     const { error } = await this.isValidCreds(<string>username, <string>password);
 
     if (!error) {
-      await this.userService.updateUser(user.id, { moodleUsername: username, moodlePassword: password });
+      await this.chatService.updateChat(chat.id, { moodleUsername: username, moodlePassword: password });
 
       await ctx.reply(`${credsMsg['saved-credentials']} ${TELEGRAM_EMOJIES.CLOCK}`, { parse_mode: 'Markdown' });
 
@@ -237,11 +241,11 @@ export class InitScene extends BaseScene {
     return this.driverService.withDriver(async (driver: WebDriver) => this.moodle.checkLogin(username, password, driver));
   }
 
-  private getCredentials(ctx: Scenes.WizardContext, user: User): Record<'username' | 'password', string | null> {
+  private getCredentials(ctx: Scenes.WizardContext, chat: Chat): Record<'username' | 'password', string | null> {
     const { username, password } = (<any>ctx).wizard.state;
     return {
-      username: username || user.moodleUsername,
-      password: password || user.moodlePassword,
+      username: username || chat.moodleUsername,
+      password: password || chat.moodlePassword,
     };
   }
 }

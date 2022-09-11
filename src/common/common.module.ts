@@ -1,9 +1,11 @@
 import { Global, Module } from '@nestjs/common';
 
-import { Logger, RequestContext } from './logger';
-import * as providers from './providers';
+import { Logger } from './logger/logger';
+import { RequestContext } from './logger/request-context';
+import { ConfigService } from './providers/config.service';
+import { UtilService } from './providers/util.service';
 
-const services = [Logger, RequestContext, ...Object.values(providers)];
+const services = [Logger, RequestContext, ConfigService, UtilService];
 
 @Global()
 @Module({

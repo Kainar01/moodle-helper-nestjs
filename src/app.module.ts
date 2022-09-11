@@ -4,25 +4,26 @@ import { BullModule } from '@nestjs/bull';
 import { BadRequestException, MiddlewareConsumer, Module, NestModule, ValidationPipe } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_PIPE, RouterModule } from '@nestjs/core';
-import { ScheduleModule } from '@nestjs/schedule';
+import { ScheduleModule as NestScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import type { ValidationError } from 'class-validator';
 import { I18nModule } from 'nestjs-i18n';
 import { TelegrafModule } from 'nestjs-telegraf';
 
-import { CommonModule, LoggerMiddleware } from './common';
-import { configuration, validateEnv } from './config';
-import {
-  BotModule,
-  UserModule,
-  AssignmentModule,
-  BullBoardModule,
-  FeedbackModule,
-  NotificationModule,
-  WebScraperModule,
-} from './modules';
-import { MOODLE_BOT_NAME } from './modules/bot';
-import { sessionMiddleware } from './modules/bot/middlewares';
+import { CommonModule } from './common/common.module';
+import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { configuration } from './config/configuration';
+import { validateEnv } from './config/env.validation';
+import { AssignmentModule } from './modules/assignment/assignment.module';
+import { MOODLE_BOT_NAME } from './modules/bot/bot.constants';
+import { BotModule } from './modules/bot/bot.module';
+import { sessionMiddleware } from './modules/bot/middlewares/session.middleware';
+import { BullBoardModule } from './modules/bull-board/bull-board.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { ScheduleModule } from './modules/schedule/schedule.module';
+import { WebScraperModule } from './modules/webscraper/webscraper.module';
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { sessionMiddleware } from './modules/bot/middlewares';
       },
       resolvers: [],
     }),
-    ScheduleModule.forRoot(),
+    NestScheduleModule.forRoot(),
     TelegrafModule.forRootAsync({
       botName: MOODLE_BOT_NAME,
       useFactory: async (config: ConfigService) => ({
@@ -70,7 +71,8 @@ import { sessionMiddleware } from './modules/bot/middlewares';
     CommonModule, // Global
     WebScraperModule,
     AssignmentModule,
-    UserModule,
+    ChatModule,
+    ScheduleModule,
     BotModule,
     NotificationModule,
     FeedbackModule,

@@ -7,7 +7,7 @@ export enum FeedbackType {
 
 export interface Feedback {
   id: number;
-  chatId: string;
+  telegramChatId: number;
   message: string;
   type: FeedbackType;
   createdAt: Date;
@@ -15,4 +15,4 @@ export interface Feedback {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface CreateFeedbackDto extends Pick<Feedback, 'chatId' | 'message'> {}
+export interface CreateFeedbackDto extends Pick<Feedback, 'telegramChatId' | 'message'> {}

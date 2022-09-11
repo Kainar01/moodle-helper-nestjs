@@ -6,12 +6,18 @@ import moment from 'moment-timezone';
 import { I18n, I18nService } from 'nestjs-i18n';
 import type { Repository } from 'typeorm';
 
-import { Assignment, AssignmentService } from '@/modules/assignment';
+import type { Assignment } from '@/modules/assignment/interfaces/assignment.interface';
+import { AssignmentService } from '@/modules/assignment/services/assignment.service';
 
-import { NOTIFICATION_QUEUES } from '../constants';
-import { NotificationEntity } from '../entities';
-import { AssignmentNotification, NotificationStatus, NotifyAssignmentJobData, PendingNotifications } from '../interfaces';
-import type { CreateAssignmentNotificationDto } from '../interfaces';
+import { NOTIFICATION_QUEUES } from '../constants/notificaiton.constants';
+import { NotificationEntity } from '../entities/notification.entity';
+import type { CreateAssignmentNotificationDto } from '../interfaces/dto/create-notification.dto';
+import {
+  type NotifyAssignmentJobData,
+  type AssignmentNotification,
+  type PendingNotifications,
+  NotificationStatus,
+} from '../interfaces/notification.interface';
 
 @Injectable()
 export class NotificationService {
@@ -35,7 +41,7 @@ export class NotificationService {
   }
 
   public async scheduleAssignmentNotificationJob(
-    data: Pick<AssignmentNotification, 'chatId' | 'assignmentId'>,
+    data: Pick<AssignmentNotification, 'telegramChatId' | 'assignmentId'>,
     hoursUntilDeadline: number,
   ) {
     const assignment = await this.assignmentService.getAssignmentById(data.assignmentId);
@@ -46,7 +52,7 @@ export class NotificationService {
 
     const scheduledAt = this.calculateNotificationTime(assignment.deadline, hoursUntilDeadline);
 
-    await this.validateAssignmentNotificationTime(data.chatId, assignment, scheduledAt);
+    await this.validateAssignmentNotificationTime(data.telegramChatId, assignment, scheduledAt);
 
     const notification = await this.saveNotification({ ...data, scheduledAt });
 
@@ -69,7 +75,7 @@ export class NotificationService {
     return moment(deadline).subtract(hoursUntil, 'hours').toDate();
   }
 
-  private async validateAssignmentNotificationTime(chatId: string, assignment: Assignment, scheduledAt: Date) {
+  private async validateAssignmentNotificationTime(chatId: number, assignment: Assignment, scheduledAt: Date) {
     const now = moment();
     if (moment(scheduledAt).isBefore(now)) {
       throw new Error(this.i18n.translate('notification.not-valid-hour'));
@@ -90,21 +96,21 @@ export class NotificationService {
   }
 
   private async getPendingNotificationCount(
-    chatId: string,
+    telegramChatId: number,
     assignmentId: number,
     notificationDateTime: Date,
   ): Promise<PendingNotifications> {
     const query = `
       WITH chat_notifications AS (
         SELECT * FROM notification
-            WHERE chat_id = $1 AND  assignment_id = $2 AND status = $3
+            WHERE telegram_chat_id = $1 AND  assignment_id = $2 AND status = $3
       )
       SELECT COALESCE(ARRAY_AGG(cn.scheduled_at ORDER BY cn.scheduled_at ASC), '{}') as notifications,
           EXISTS(SELECT 1 FROM chat_notifications WHERE scheduled_at = $4) as duplicate
         FROM chat_notifications AS cn
     `;
     return this.notificationRepository
-      .query(query, [chatId, assignmentId, NotificationStatus.PENDING, notificationDateTime])
+      .query(query, [telegramChatId, assignmentId, NotificationStatus.PENDING, notificationDateTime])
       .then((rows: PendingNotifications[]) => rows[0]);
   }
 }

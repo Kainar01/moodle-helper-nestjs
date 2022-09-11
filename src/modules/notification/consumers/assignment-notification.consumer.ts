@@ -5,13 +5,15 @@ import { InjectBot } from 'nestjs-telegraf';
 import { Telegraf } from 'telegraf';
 import type { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 
-import { Logger } from '@/common';
-import { Assignment, AssignmentService, AssignmentStatus } from '@/modules/assignment';
-import { BotContext, MOODLE_BOT_ACTIONS, MOODLE_BOT_NAME, TELEGRAM_EMOJIES } from '@/modules/bot';
+import { Logger } from '@/common/logger/logger';
+import { type Assignment, AssignmentStatus } from '@/modules/assignment/interfaces/assignment.interface';
+import { AssignmentService } from '@/modules/assignment/services/assignment.service';
+import { MOODLE_BOT_NAME, TELEGRAM_EMOJIES, MOODLE_BOT_ACTIONS } from '@/modules/bot/bot.constants';
+import type { BotContext } from '@/modules/bot/interfaces/bot.interface';
 
-import { NOTIFICATION_QUEUES } from '../constants';
-import type { NotifyAssignmentJobData } from '../interfaces';
-import { NotificationService } from '../services';
+import { NOTIFICATION_QUEUES } from '../constants/notificaiton.constants';
+import type { NotifyAssignmentJobData } from '../interfaces/notification.interface';
+import { NotificationService } from '../services/notification.service';
 
 @Processor(NOTIFICATION_QUEUES.NOTIFY_ASSIGNMENT)
 export class AssignmentNotificationConsumer {
@@ -33,19 +35,19 @@ export class AssignmentNotificationConsumer {
       throw new Error('Notification not found');
     }
 
-    const { assignmentId, chatId } = notification;
+    const { assignmentId, telegramChatId } = notification;
 
     try {
       const assignment = await this.assignmentService.getAssignmentById(assignmentId);
 
       if (!assignment) throw new Error(`Assignment does not exist by id ${assignmentId}`);
 
-      return await this.sendAssignment(chatId, assignment);
+      return await this.sendAssignment(telegramChatId, assignment);
 
       // TODO: update notification entitiy
     } catch (err) {
       const message = this.i18n.translate<string>('notification.error', { args: { error: (<Error>err).message } });
-      await this.sendMessage(chatId, message);
+      await this.sendMessage(telegramChatId, message);
       throw err;
     }
   }
@@ -55,11 +57,11 @@ export class AssignmentNotificationConsumer {
     this.logger.error(`notification id = ${job.data.notificationId}`, error);
   }
 
-  private async sendMessage(chatId: string, message: string, extra?: ExtraReplyMessage) {
+  private async sendMessage(chatId: number, message: string, extra?: ExtraReplyMessage) {
     return this.bot.telegram.sendMessage(chatId, message, extra);
   }
 
-  private async sendAssignment(chatId: string, assignment: Assignment) {
+  private async sendAssignment(chatId: number, assignment: Assignment) {
     const { formatted } = this.assignmentService.getFormattedAssignment(assignment);
 
     const notificationMsg = this.i18n.translate('notification.arrived');

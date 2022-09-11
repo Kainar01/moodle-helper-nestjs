@@ -13,8 +13,12 @@ export const MOODLE_BOT_ACTIONS = {
   ASSIGNMENT_HIDE: 'assignment:hide:',
   ASSIGNMENT_NOTIFY_OPTIONS: 'assignment:notify-options:',
   ASSIGNMENT_NOTIFY: 'assignment:notify:',
+  VERIFICATION_REQUEST_CONFIRM: 'verification:request:confirm:',
+  VERIFICATION_REQUEST_DECLINE: 'verification:request:decline:',
   ADMIN_REQUEST_CONFIRM: 'admin:request:confirm:',
   ADMIN_REQUEST_DECLINE: 'admin:request:decline:',
+  ERROR_CHAT_REQUEST_CONFIRM: 'error-chat:request:confirm:',
+  ERROR_CHAT_REQUEST_DECLINE: 'error-chat:request:decline:',
 };
 
 // https://apps.timwhitlock.info/emoji/tables/unicode

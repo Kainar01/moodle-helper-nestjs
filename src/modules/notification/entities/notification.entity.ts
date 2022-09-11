@@ -1,15 +1,15 @@
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { type AssignmentNotification, NotificationStatus } from '../interfaces/notification.interface';
 
-import { AssignmentNotification, NotificationStatus } from '../interfaces';
 
 @Entity('notification')
-@Unique(['chatId', 'assignmentId', 'scheduledAt'])
+@Unique(['telegramChatId', 'assignmentId', 'scheduledAt'])
 export class NotificationEntity implements AssignmentNotification {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id!: number;
 
-  @Column('varchar', { nullable: false, name: 'chat_id' })
-  chatId!: string;
+  @Column('bigint', { nullable: false, name: 'telegram_chat_id' })
+  telegramChatId!: number;
 
   @Column('int', { nullable: false, name: 'assignment_id' })
   assignmentId!: number;

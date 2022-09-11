@@ -4,12 +4,13 @@ import { I18n, I18nService } from 'nestjs-i18n';
 import { Action, Ctx, Message, Next, Wizard, WizardStep } from 'nestjs-telegraf';
 import type { Scenes } from 'telegraf';
 
-import { TelegrafExceptionFilter } from '@/common/filters';
-import { FeedbackService } from '@/modules/feedback';
-import { User, UserService } from '@/modules/user';
+import { TelegrafExceptionFilter } from '@/common/filters/telegram-exception.filter';
+import type { Chat } from '@/modules/chat/chat.interface';
+import { ChatService } from '@/modules/chat/chat.service';
+import { FeedbackService } from '@/modules/feedback/feedback.service';
 
 import { MOODLE_BOT_SCENES, TELEGRAM_EMOJIES } from '../../bot.constants';
-import { CtxUser } from '../../decorators';
+import { CtxChat } from '../../decorators/chat.decorator';
 import { BaseScene } from '../base/base.scene';
 import { FEEDBACK_SCENE_ACTIONS, FEEDBACK_SCENE_STEPS } from './feedback.constants';
 
@@ -18,7 +19,7 @@ import { FEEDBACK_SCENE_ACTIONS, FEEDBACK_SCENE_STEPS } from './feedback.constan
 export class FeedbackScene extends BaseScene {
   private FEEDBACK_KEY: string = 'feedback';
 
-  constructor(@I18n() i18n: I18nService, private userService: UserService, private feedbackService: FeedbackService) {
+  constructor(@I18n() i18n: I18nService, private chatService: ChatService, private feedbackService: FeedbackService) {
     super(i18n);
   }
 
@@ -71,7 +72,7 @@ export class FeedbackScene extends BaseScene {
   }
 
   @Action(new RegExp(`${FEEDBACK_SCENE_ACTIONS.FEEDBACK_CONFIRM}`))
-  public async rescheduleConfirmAction(@Ctx() ctx: Scenes.WizardContext, @CtxUser() user: User) {
+  public async rescheduleConfirmAction(@Ctx() ctx: Scenes.WizardContext, @CtxChat() chat: Chat) {
     const callbackMessage = this.getCallbackMessage(ctx);
 
     await ctx.editMessageReplyMarkup({ inline_keyboard: [] });
@@ -79,13 +80,13 @@ export class FeedbackScene extends BaseScene {
 
     // TODO: send request to admin
 
-    const admin = await this.userService.findSuperAdmin();
+    const adminChat = await this.chatService.findAdminChat();
 
-    if (!admin) {
+    if (!adminChat) {
       throw new Error(this.getMessage('feedback.no-admin'));
     }
 
-    await this.sendFeedback(ctx, admin.chatId, user);
+    await this.sendFeedback(ctx, adminChat.telegramChatId, chat);
 
     const message = this.getMessage('feedback.saved');
     await ctx.reply(`${message} ${TELEGRAM_EMOJIES.RAISING_HANDS}`);
@@ -103,14 +104,14 @@ export class FeedbackScene extends BaseScene {
     await this.leaveScene(ctx);
   }
 
-  private async sendFeedback(ctx: Scenes.WizardContext, adminChatId: string, user: User) {
+  private async sendFeedback(ctx: Scenes.WizardContext, adminChatId: number, chat: Chat) {
     const feedbackMessage = this.getFeedback(ctx);
 
-    const feedback = await this.feedbackService.saveFeedback({ chatId: user.chatId, message: feedbackMessage });
+    const feedback = await this.feedbackService.saveFeedback({ telegramChatId: chat.id, message: feedbackMessage });
 
     const message = this.getMessage('feedback.feedback-left', {
-      name: user.name,
-      userId: user.telegramUserId,
+      name: chat.name,
+      userId: chat.id,
       feedback: feedback.message,
     });
 

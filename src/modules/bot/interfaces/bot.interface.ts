@@ -1,6 +1,6 @@
 import type { Context, Scenes } from 'telegraf';
 
-import type { User } from '@/modules/user';
+import type { Chat } from '@/modules/chat/chat.interface';
 
 export enum BotCommand {
   START = 'start',
@@ -11,6 +11,8 @@ export enum BotCommand {
   NOTIFY_ASSIGNMENT = 'notifyassignment',
   REQUEST_VERIFY = 'requestverify',
   LEAVE_FEEDBACK = 'feedback',
+  REQUEST_ADMIN = 'requestadmin',
+  MAKE_ERROR_CHAT = 'makeerrorchat',
 }
 
 export enum BotAction {
@@ -18,5 +20,5 @@ export enum BotAction {
 }
 
 export interface BotContext extends Context, Scenes.SceneContext {
-  user: User;
+  botChat: Chat;
 }

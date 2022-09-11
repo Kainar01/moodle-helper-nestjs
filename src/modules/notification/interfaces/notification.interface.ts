@@ -10,7 +10,7 @@ export enum NotificationStatus {
 
 export interface AssignmentNotification {
   id: number;
-  chatId: string;
+  telegramChatId: number;
   assignmentId: number;
   scheduledAt: Date;
   status: NotificationStatus;

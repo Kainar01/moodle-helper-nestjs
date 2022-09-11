@@ -5,8 +5,9 @@ import { BullModule, getQueueToken } from '@nestjs/bull';
 import { Inject, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import type { Queue } from 'bull';
 
-import { ASSIGNMENT_QUEUES } from '@/modules/assignment';
-import { NOTIFICATION_QUEUES } from '@/modules/notification';
+import { ASSIGNMENT_QUEUES } from '../assignment/assignment.constants';
+import { NOTIFICATION_QUEUES } from '../notification/constants/notificaiton.constants';
+
 // TODO: FIX BULL BOARD, NOT WORKING
 @Module({
   imports: [

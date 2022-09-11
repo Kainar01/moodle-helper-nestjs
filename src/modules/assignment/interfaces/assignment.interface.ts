@@ -11,7 +11,7 @@ export enum AssignmentStatus {
 
 export interface Assignment {
   id: number;
-  userId: number;
+  chatId: number;
   assignmentId: string;
   title: string;
   type: AssignmentType;

@@ -6,33 +6,34 @@ import moment from 'moment-timezone';
 import { I18n, I18nService } from 'nestjs-i18n';
 import { InsertResult, MoreThan, Repository, UpdateResult } from 'typeorm';
 
-import { TELEGRAM_EMOJIES } from '@/modules/bot';
-import { User, UserService } from '@/modules/user';
+import { TELEGRAM_EMOJIES } from '@/modules/bot/bot.constants';
+import type { Chat } from '@/modules/chat/chat.interface';
+import { ChatService } from '@/modules/chat/chat.service';
 
-import { MoodleAssignmentService } from '.';
 import {
-  ASSIGNMENT_NOTIFICATION_COOLDOWN_MILLISECONDS,
   ASSIGNMENT_QUEUES,
+  ASSIGNMENT_NOTIFICATION_COOLDOWN_MILLISECONDS,
   ASSIGNMENT_REQUEST_COOLDOWN_MILLISECONDS,
 } from '../assignment.constants';
-import { AssignmentEntity } from '../entities';
+import { AssignmentEntity } from '../entities/assignment.entity';
 import {
-  Assignment,
-  AssignmentFormatted,
-  AssignmentFormattedListRO,
-  AssignmentListRO,
+  type Assignment,
   AssignmentStatus,
-  MoodleAssignment,
-  ShowAssignmentJobData,
-} from '../interfaces';
-import type { UpdateAssignmentDto } from '../interfaces/dto';
+  type AssignmentListRO,
+  type AssignmentFormattedListRO,
+  type AssignmentFormatted,
+} from '../interfaces/assignment.interface';
 import type { CreateAssignmentDto } from '../interfaces/dto/create-assignment.dto';
+import type { UpdateAssignmentDto } from '../interfaces/dto/update-assignment.dto';
+import type { MoodleAssignment } from '../interfaces/moodle-assignment.interface';
+import type { ShowAssignmentJobData } from '../interfaces/show-assignments.interface';
+import { MoodleAssignmentService } from './moodle-assignment.service';
 
 @Injectable()
 export class AssignmentService {
   constructor(
     @I18n() private i18n: I18nService,
-    private userService: UserService,
+    private chatService: ChatService,
     private moodleAssignmentService: MoodleAssignmentService,
     @InjectQueue(ASSIGNMENT_QUEUES.SHOW_ASSIGNMENTS) private showAssignmentQueue: Queue<ShowAssignmentJobData>,
     @InjectRepository(AssignmentEntity) private assignmentRepository: Repository<AssignmentEntity>,
@@ -51,16 +52,16 @@ export class AssignmentService {
       .then(({ raw }: UpdateResult) => <Assignment>raw[0]);
   }
 
-  public async scheduleAssignmentNotification(user: User, delay?: number) {
-    await this.showAssignmentQueue.add({ userId: user.id }, { delay });
-    await this.userService.updateUser(user.id, { lastAssignmentRequest: moment().toDate() });
+  public async scheduleAssignmentNotification(chat: Chat, delay?: number) {
+    await this.showAssignmentQueue.add({ chatId: chat.id }, { delay });
+    await this.chatService.updateChat(chat.id, { lastAssignmentRequest: moment().toDate() });
   }
 
   /**
    * NEED TO FIX THIS SERVICE.
    * Prior to cooldown, it returns wrong seconds
    */
-  public validateUserLastNotification({ lastAssignmentNotification, lastAssignmentRequest }: User) {
+  public validateChatLastNotification({ lastAssignmentNotification, lastAssignmentRequest }: Chat) {
     if (lastAssignmentNotification || lastAssignmentRequest) {
       // check rate limit after user got notification
       if (lastAssignmentNotification) {
@@ -101,19 +102,21 @@ export class AssignmentService {
     return this.assignmentRepository.findOne({ where: { assignmentId } });
   }
 
-  public async getAssignmentsByUserId(userId: number): Promise<Assignment[]> {
-    return this.assignmentRepository.find({ where: { userId, status: AssignmentStatus.PENDING, deadline: MoreThan(moment().toDate()) } });
+  public async getAssignmentsByChatId(chatId: number): Promise<Assignment[]> {
+    return this.assignmentRepository.find({
+      where: { chatId, status: AssignmentStatus.PENDING, deadline: MoreThan(moment().toDate()) },
+    });
   }
 
-  public async getAssignments(user: User): Promise<AssignmentListRO> {
-    const { events: moodleAssignments, error } = await this.moodleAssignmentService.getAssignments(user);
+  public async getAssignments(chat: Chat): Promise<AssignmentListRO> {
+    const { events: moodleAssignments, error } = await this.moodleAssignmentService.getAssignments(chat);
 
     if (error || !moodleAssignments) return { error, assignments: [] };
 
     const assignmentsDto: CreateAssignmentDto[] = moodleAssignments.map(
       ({ title, date, link, courseTitle, eventId }: MoodleAssignment) => ({
         title,
-        userId: user.id,
+        chatId: chat.id,
         deadline: date,
         link,
         courseTitle,
@@ -128,8 +131,8 @@ export class AssignmentService {
     return { error: null, assignments: filteredAssignments };
   }
 
-  public async getFormattedAssignments(user: User): Promise<AssignmentFormattedListRO> {
-    const { assignments, error } = await this.getAssignments(user);
+  public async getFormattedAssignments(chat: Chat): Promise<AssignmentFormattedListRO> {
+    const { assignments, error } = await this.getAssignments(chat);
 
     if (error) return { error, assignments: [] };
 
@@ -150,7 +153,7 @@ export class AssignmentService {
     return { error, assignments: formattedAssignments };
   }
 
-  public getFormattedAssignment(assignment: Assignment) :AssignmentFormatted {
+  public getFormattedAssignment(assignment: Assignment): AssignmentFormatted {
     const { title, deadline, link, courseTitle } = assignment;
     let formattedAssignment = '';
     // TITLE
@@ -225,7 +228,7 @@ export class AssignmentService {
       .createQueryBuilder('a')
       .insert()
       .values(assignments)
-      .orUpdate(['title', 'link', 'course_title', 'deadline'], ['assignment_id', 'user_id'])
+      .orUpdate(['title', 'link', 'course_title', 'deadline'], ['assignment_id', 'chat_id'])
       .returning('id, link, title, course_title as "courseTitle", deadline, status, type, assignment_id as "assignmentId"')
       .execute()
       .then(({ raw }: InsertResult) => <Assignment[]>raw);

@@ -1,4 +1,4 @@
-version: "3.7" # optional since v1.27.0
+version: "3" # optional since v1.27.0
 services:
   redis:
     image: redis:alpine
@@ -20,11 +20,6 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 500M
     env_file:
      - .env
     environment:

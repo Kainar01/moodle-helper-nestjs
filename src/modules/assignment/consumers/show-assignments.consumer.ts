@@ -66,20 +66,24 @@ export class ShowAssignmentsConsumer {
     const { scheduleId, chatId } = job.data;
     const chat = await this.chatService.findChatById(chatId);
 
-    if (!chat) return;
+    try {
+      if (!chat) return;
 
-    if (scheduleId) {
-      const schedule = await this.scheduleService.getScheduleById(scheduleId);
+      if (scheduleId) {
+        const schedule = await this.scheduleService.getScheduleById(scheduleId);
 
-      if (!schedule) {
-        throw new Error(`Не валидное время уведомление ${scheduleId}`);
+        if (!schedule) {
+          throw new Error(`Не валидное время уведомление ${scheduleId}`);
+        }
+
+        const message = this.i18n.translate<string>('assignments.job.processing-with-schedule', { args: { schedule: schedule.label } });
+        await this.sendMessage(chat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.PLEASED}`, { parse_mode: 'Markdown' });
+      } else {
+        const message = this.i18n.translate<string>('assignments.job.processing');
+        await this.sendMessage(chat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.PLEASED}`, { parse_mode: 'Markdown' });
       }
-
-      const message = this.i18n.translate<string>('assignments.job.processing-with-schedule', { args: { schedule: schedule.label } });
-      await this.sendMessage(chat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.PLEASED}`, { parse_mode: 'Markdown' });
-    } else {
-      const message = this.i18n.translate<string>('assignments.job.processing');
-      await this.sendMessage(chat.telegramChatId, `${message} ${TELEGRAM_EMOJIES.PLEASED}`, { parse_mode: 'Markdown' });
+    } catch (err) {
+      this.logger.error(err);
     }
   }
 
